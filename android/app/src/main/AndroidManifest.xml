@@ -53,6 +53,8 @@
             </intent-filter>
         </activity>
         
+        <!-- 覆盖层 WebView → 无需额外 Activity -->
+        
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
