@@ -31,6 +31,7 @@ class HomeController extends GetxController {
   final RxBool showTerminalWhiteTextRx = false.obs; // GetX 响应式变量用于设置页更新
   final RxList<Map<String, String>> customWebViews =
       <Map<String, String>>[].obs; // 自定义 WebView 列表
+  final RxInt navigateToTab = (-1).obs; // 通知 WebViewPage 切换标签页
   Dialog? _qrcodeDialog;
   StreamSubscription? _qrcodeSubscription;
   StreamSubscription? _webviewSubscription; // 添加webview监听订阅
@@ -47,6 +48,7 @@ class HomeController extends GetxController {
   bool webviewHasOpen = false;
   bool _isLocalhostDetected = false; // localhost:6185 检测标志
   bool _isQrcodeProcessed = false; // 二维码处理完成标志
+  Timer? _localhostFallbackTimer; // 10秒后备定时器
   bool _isAppInForeground = true; // 应用是否在前台
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
   String _pendingOutput = ''; // 待处理的输出缓冲
@@ -80,7 +82,7 @@ class HomeController extends GetxController {
   // 使用 login_ubuntu 函数，传入要执行的命令
   // Use login_ubuntu function, passing the command to execute
   String get command {
-    return 'source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "bash /root/launcher.sh"\n';
+    return 'source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "bash /root/launcher.sh | tee /root/napcat.log"\n';
   }
 
   // 检测文本是否包含彩色 ANSI 代码(非白色/默认色)
@@ -281,6 +283,15 @@ class HomeController extends GetxController {
         // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
 
+        // 10秒后备：若 _isQrcodeProcessed 仍未满足则强行置为 true
+        _localhostFallbackTimer?.cancel();
+        _localhostFallbackTimer = Timer(const Duration(seconds: 10), () {
+          if (!_isQrcodeProcessed) {
+            _isQrcodeProcessed = true;
+            _checkAndNavigateToWebview();
+          }
+        });
+
         Future.delayed(const Duration(milliseconds: 2000), () {
           update();
         });
@@ -392,6 +403,7 @@ class HomeController extends GetxController {
 
         // 标记二维码处理完成
         _isQrcodeProcessed = true;
+        _localhostFallbackTimer?.cancel();
 
         // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
@@ -404,6 +416,7 @@ class HomeController extends GetxController {
       // 检测指令3napcat启动完成（快速登录无二维码）
       if (event.contains('协议适配器初始化完成') && !_isQrcodeProcessed) {
         _isQrcodeProcessed = true;
+        _localhostFallbackTimer?.cancel();
         _checkAndNavigateToWebview();
         await _qrcodeSubscription?.cancel();
         _qrcodeSubscription = null;
@@ -763,6 +776,7 @@ class HomeController extends GetxController {
     // 清理订阅，避免内存泄漏
     _qrcodeSubscription?.cancel();
     _webviewSubscription?.cancel();
+    _localhostFallbackTimer?.cancel();
     _qrcodeSubscription = null;
     _webviewSubscription = null;
 
