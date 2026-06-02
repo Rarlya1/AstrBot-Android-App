@@ -29,7 +29,7 @@ Future<void> main() async {
   // Hide system UI
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [
     SystemUiOverlay.top,
-    // SystemUiOverlay.bottom,
+    SystemUiOverlay.bottom,
   ]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
