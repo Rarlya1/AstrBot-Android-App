@@ -251,7 +251,7 @@ class HomeController extends GetxController {
         // 使用路由跳转
         Get.toNamed(AppRoutes.webview);
         // 杀掉启动时产生的多余终端进程
-        try { Process.run('pkill', ['-f', 'bash|tee']); } catch (_) {}
+        // try { Process.run('pkill', ['-f', 'bash|tee']); } catch (_) {}
         webviewHasOpen = true; // 只有真正打开webview时才设置为true
       });
     }
@@ -786,12 +786,12 @@ class HomeController extends GetxController {
     try {
       if (pseudoTerminal != null) {
         Log.i('正在关闭主终端进程...', tag: 'AstrBot');
-        pseudoTerminal?.kill();
+        pseudoTerminal?.kill(ProcessSignal.sigkill);
         pseudoTerminal = null;
       }
       if (napcatTerminal != null) {
         Log.i('正在关闭 NapCat 终端进程...', tag: 'AstrBot-Napcat');
-        napcatTerminal?.kill();
+        napcatTerminal?.kill(ProcessSignal.sigkill);
         napcatTerminal = null;
       }
     } catch (e) {

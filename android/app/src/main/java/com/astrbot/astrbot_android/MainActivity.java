@@ -250,11 +250,6 @@ public class MainActivity extends FragmentActivity {
             wv.loadUrl(url);
             tabWebViews.put(tabIndex, wv);
         } else {
-            // 已有 WebView，URL 变化时刷新
-            String currentUrl = wv.getUrl();
-            if (currentUrl == null || !currentUrl.equals(url)) {
-                wv.loadUrl(url);
-            }
             // 更新 margin
             ViewGroup.MarginLayoutParams mlp =
                     (ViewGroup.MarginLayoutParams) wv.getLayoutParams();
