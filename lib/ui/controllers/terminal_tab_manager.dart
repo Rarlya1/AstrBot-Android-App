@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
@@ -19,6 +20,7 @@ class TerminalTab {
   final TerminalTabType type;
   final Terminal terminal;
   final Pty? pty;
+  final int? prootPid; // 关联的 proot 进程 PID
   bool isActive;
 
   TerminalTab({
@@ -27,6 +29,7 @@ class TerminalTab {
     required this.type,
     required this.terminal,
     this.pty,
+    this.prootPid,
     this.isActive = false,
   });
 }
@@ -173,7 +176,7 @@ class TerminalTabManager extends GetxController {
     try {
       // 关闭PTY
       if (tab.pty != null) {
-        tab.pty!.kill();
+        tab.pty!.kill(ProcessSignal.sigkill);
         Log.i('关闭终端PTY: ${tab.title}', tag: 'TerminalTabManager');
       }
 
@@ -211,7 +214,7 @@ class TerminalTabManager extends GetxController {
     for (var tab in tabs) {
       if (tab.type == TerminalTabType.system && tab.pty != null) {
         try {
-          tab.pty!.kill();
+          tab.pty!.kill(ProcessSignal.sigkill);
           Log.i('清理终端PTY: ${tab.title}', tag: 'TerminalTabManager');
         } catch (e) {
           Log.e('清理终端PTY失败: $e', tag: 'TerminalTabManager');
