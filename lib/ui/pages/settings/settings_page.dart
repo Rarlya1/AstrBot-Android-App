@@ -1073,22 +1073,14 @@ class _SettingsPageState extends State<SettingsPage> {
           leading: const Icon(Icons.home),
           title: const Text('回到 AstrBot 主页'),
           subtitle: const Text('切换到 AstrBot 页面'),
-          onTap: () async {
-            try {
-              await _nativeWebViewChannel.invokeMethod('openMainView', {
-                'url': 'http://127.0.0.1:6185',
-                'title': 'AstrBot',
-                'tabIndex': 0,
-              });
-              Get.snackbar(
-                '已跳转',
-                'AstrBot 页面已打开',
-                snackPosition: SnackPosition.BOTTOM,
-                duration: const Duration(seconds: 2),
-              );
-            } catch (e) {
-              debugPrint('返回主页失败: $e');
-            }
+          onTap: () {
+            homeController.navigateToTab.value = 0;
+            Get.snackbar(
+              '已跳转',
+              '正在切换到 AstrBot 页面',
+              snackPosition: SnackPosition.BOTTOM,
+              duration: const Duration(seconds: 2),
+            );
           },
         ),
         ListTile(
