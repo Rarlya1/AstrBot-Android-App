@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import '../../controllers/terminal_controller.dart';
 import '../settings/settings_page.dart';
 import '../terminal/terminal_tab_view.dart';
@@ -28,6 +26,14 @@ class _WebViewPageState extends State<WebViewPage> {
   void initState() {
     super.initState();
     _initSystemUI();
+    // 监控自定义 WebView 列表变化，清空原生端缓存
+    ever(homeController.customWebViews, (_) {
+      _nativeWebViewChannel.invokeMethod('closeAllWebViews');
+    });
+    // NapCat 开关变化时也清缓存
+    ever(homeController.napCatWebUiEnabledRx, (_) {
+      _nativeWebViewChannel.invokeMethod('closeAllWebViews');
+    });
     // 首次打开自动启动 AstrBot
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot', tabIndex: 0);
@@ -146,15 +152,7 @@ class _WebViewPageState extends State<WebViewPage> {
                     const TerminalTabView(),
 
                     // 设置页面
-                    SettingsPage(
-                      astrBotController: WebViewController(),
-                      napCatController: WebViewController(),
-                      onNavigate: (index) {
-                        setState(() {
-                          _currentIndex = index;
-                        });
-                      },
-                    ),
+                    const SettingsPage(),
                   ],
                 ),
               ),

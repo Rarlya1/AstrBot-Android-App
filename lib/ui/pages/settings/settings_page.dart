@@ -3,27 +3,24 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:global_repository/global_repository.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter/services.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../../core/constants/scripts.dart' as scripts;
 import '../../../core/services/password_manager.dart';
 import '../../../core/config/app_config.dart';
 
+/// 原生 WebView 通道
+const _nativeWebViewChannel = MethodChannel('astrbot_native_webview');
+
 class SettingsPage extends StatefulWidget {
-  final WebViewController astrBotController;
-  final WebViewController napCatController;
-  final Function(int) onNavigate;
 
   const SettingsPage({
     super.key,
-    required this.astrBotController,
-    required this.napCatController,
-    required this.onNavigate,
   });
 
   @override
@@ -1075,22 +1072,23 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.home),
           title: const Text('回到 AstrBot 主页'),
-          subtitle: const Text('重置并刷新 AstrBot 页面'),
-          onTap: () {
-            // 重置 AstrBot WebView URL 并刷新
-            widget.astrBotController.loadRequest(
-              Uri.parse('http://127.0.0.1:6185'),
-            );
-
-            // 跳转到 AstrBot 标签页（索引 0）
-            widget.onNavigate(0);
-
-            Get.snackbar(
-              '已跳转',
-              'AstrBot 页面已重置并刷新',
-              snackPosition: SnackPosition.BOTTOM,
-              duration: const Duration(seconds: 2),
-            );
+          subtitle: const Text('切换到 AstrBot 页面'),
+          onTap: () async {
+            try {
+              await _nativeWebViewChannel.invokeMethod('openMainView', {
+                'url': 'http://127.0.0.1:6185',
+                'title': 'AstrBot',
+                'tabIndex': 0,
+              });
+              Get.snackbar(
+                '已跳转',
+                'AstrBot 页面已打开',
+                snackPosition: SnackPosition.BOTTOM,
+                duration: const Duration(seconds: 2),
+              );
+            } catch (e) {
+              debugPrint('返回主页失败: $e');
+            }
           },
         ),
         ListTile(
@@ -1652,8 +1650,7 @@ class _SettingsPageState extends State<SettingsPage> {
           subtitle: const Text('清理所有 WebView 缓存和密码'),
           onTap: () async {
             try {
-              await widget.astrBotController.clearCache();
-              await widget.napCatController.clearCache();
+              await _nativeWebViewChannel.invokeMethod('clearCache');
               await PasswordManager.clearAllPasswords();
               if (context.mounted) {
                 Get.snackbar(

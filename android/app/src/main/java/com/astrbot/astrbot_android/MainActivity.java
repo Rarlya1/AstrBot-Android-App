@@ -102,6 +102,29 @@ public class MainActivity extends FragmentActivity {
                         result.success(true);
                         break;
                     }
+                    case "clearCache": {
+                        for (int i = 0; i < tabWebViews.size(); i++) {
+                            WebView twv = tabWebViews.valueAt(i);
+                            if (twv != null) {
+                                twv.clearCache(true);
+                            }
+                        }
+                        result.success(true);
+                        break;
+                    }
+                    case "closeAllWebViews": {
+                        for (int i = 0; i < tabWebViews.size(); i++) {
+                            WebView twv = tabWebViews.valueAt(i);
+                            if (twv != null) {
+                                ViewGroup parent = (ViewGroup) twv.getParent();
+                                if (parent != null) parent.removeView(twv);
+                                twv.destroy();
+                            }
+                        }
+                        tabWebViews.clear();
+                        result.success(true);
+                        break;
+                    }
                     case "hideWebView": {
                         hideOverlayWebView();
                         result.success(true);
@@ -138,8 +161,8 @@ public class MainActivity extends FragmentActivity {
 
     @SuppressLint("SetJavaScriptEnabled")
     private void hideOverlayWebView() {
-        for (int i = 0; i < tabWebViews.size(); i++) {
-            WebView wv = tabWebViews.valueAt(i);
+        if (activeTabIndex != -1) {
+            WebView wv = tabWebViews.get(activeTabIndex);
             if (wv != null) wv.setVisibility(View.GONE);
         }
     }
@@ -227,7 +250,12 @@ public class MainActivity extends FragmentActivity {
             wv.loadUrl(url);
             tabWebViews.put(tabIndex, wv);
         } else {
-            // 已有 WebView，更新 margin
+            // 已有 WebView，URL 变化时刷新
+            String currentUrl = wv.getUrl();
+            if (currentUrl == null || !currentUrl.equals(url)) {
+                wv.loadUrl(url);
+            }
+            // 更新 margin
             ViewGroup.MarginLayoutParams mlp =
                     (ViewGroup.MarginLayoutParams) wv.getLayoutParams();
             int newTop = statusBarHeightPx > 0 ? statusBarHeightPx : 0;
@@ -242,7 +270,6 @@ public class MainActivity extends FragmentActivity {
         wv.setVisibility(View.VISIBLE);
         activeTabIndex = tabIndex;
     }
-
 
     private void disableZoom(WebView view) {
         view.evaluateJavascript(
