@@ -126,6 +126,19 @@ class _WebViewPageState extends State<WebViewPage> {
         _previousNavItemCount = currentNavItemCount;
       }
 
+      // 监听设置页点击"返回主页"的导航请求
+      if (homeController.navigateToTab.value == 0) {
+        homeController.navigateToTab.value = -1;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot', tabIndex: 0);
+            setState(() {
+              _currentIndex = 0;
+            });
+          }
+        });
+      }
+
       return AnnotatedRegion<SystemUiOverlayStyle>(
         value: const SystemUiOverlayStyle(
           statusBarColor: Colors.white,
@@ -152,7 +165,7 @@ class _WebViewPageState extends State<WebViewPage> {
                     const TerminalTabView(),
 
                     // 设置页面
-                    const SettingsPage(),
+                    const SettingsPage(key: ValueKey('settings')),
                   ],
                 ),
               ),
