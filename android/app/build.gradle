@@ -13,7 +13,7 @@ if (hasKeystoreFile) {
     logger.lifecycle('Warning: key.properties not found, fallback to debug keystore.')
 }
 android {
-    namespace 'com.astrbot.astrbot_android'
+    namespace 'com.astrbot.astrbot_android1'
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
