@@ -62,7 +62,7 @@
             android:name="io.flutter.embedding.android.EnableImpeller"
             android:value="false" />
         <meta-data
-            android:name="com.astrbot.astrbot_android.ic_launcher"
+            android:name="com.astrbot.astrbot_android1.ic_launcher"
             android:resource="@mipmap/ic_launcher" />
         
         <!-- Flutter Foreground Service -->
@@ -74,7 +74,7 @@
         <!-- Ubuntu Documents Provider -->
         <provider
             android:name=".UbuntuDocumentsProvider"
-            android:authorities="com.astrbot.astrbot_android.documents"
+            android:authorities="com.astrbot.astrbot_android1.documents"
             android:exported="true"
             android:grantUriPermissions="true"
             android:permission="android.permission.MANAGE_DOCUMENTS">
