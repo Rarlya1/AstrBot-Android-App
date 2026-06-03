@@ -956,7 +956,7 @@ class _SettingsPageState extends State<SettingsPage> {
       // authority: com.astrbot.astrbot_android.documents
       // rootId: ubuntu_root
       final contentUri = Uri.parse(
-        'content://com.astrbot.astrbot_android.documents/root/ubuntu_root',
+        'content://com.astrbot.astrbot_android1.documents/root/ubuntu_root',
       );
 
       if (await canLaunchUrl(contentUri)) {
