@@ -37,7 +37,7 @@ android {
     }
 
     defaultConfig {
-        applicationId 'com.astrbot.astrbot_android'
+        applicationId 'com.astrbot.astrbot_android1'
         minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode
