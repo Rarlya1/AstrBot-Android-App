@@ -1,4 +1,4 @@
-package com.astrbot.astrbot_android;
+package com.astrbot.astrbot_android1;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -58,7 +58,7 @@ public class MainActivity extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mContext = this;
-        setContentView(com.astrbot.astrbot_android.R.layout.my_activity_layout);
+        setContentView(com.astrbot.astrbot_android1.R.layout.my_activity_layout);
 
         flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
         FlutterEngine flutterEngine = new FlutterEngine(this, null, false);
@@ -150,7 +150,7 @@ public class MainActivity extends FragmentActivity {
         }
         fragmentManager
                 .beginTransaction()
-                .add(com.astrbot.astrbot_android.R.id.fl_container, flutterFragment, TAG_FLUTTER_FRAGMENT)
+                .add(com.astrbot.astrbot_android1.R.id.fl_container, flutterFragment, TAG_FLUTTER_FRAGMENT)
                 .commit();
     }
 
@@ -168,7 +168,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void showOverlayWebView(String url, String title, int tabIndex) {
-        FrameLayout container = findViewById(com.astrbot.astrbot_android.R.id.fl_container);
+        FrameLayout container = findViewById(com.astrbot.astrbot_android1.R.id.fl_container);
         if (container == null) return;
 
         // 先隐藏所有 WebView
