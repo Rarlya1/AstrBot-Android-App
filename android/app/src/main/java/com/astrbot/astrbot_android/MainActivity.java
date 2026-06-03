@@ -250,7 +250,7 @@ public class MainActivity extends FragmentActivity {
             wv.loadUrl(url);
             tabWebViews.put(tabIndex, wv);
         } else {
-            // 更新 margin
+            // 已有 WebView，更新 margin
             ViewGroup.MarginLayoutParams mlp =
                     (ViewGroup.MarginLayoutParams) wv.getLayoutParams();
             int newTop = statusBarHeightPx > 0 ? statusBarHeightPx : 0;
