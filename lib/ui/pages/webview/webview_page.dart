@@ -165,7 +165,7 @@ class _WebViewPageState extends State<WebViewPage> {
                     const TerminalTabView(),
 
                     // 设置页面
-                    const SettingsPage(key: ValueKey('settings')),
+                    const SettingsPage(),
                   ],
                 ),
               ),
