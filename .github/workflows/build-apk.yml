@@ -41,9 +41,12 @@ jobs:
       - name: Rename package for clone build
         if: matrix.flavor.suffix != ''
         run: |
-          # 替换包名
-          find android lib -type f \( -name "*.gradle" -o -name "*.xml" -o -name "*.dart" \) \
+           # 替换包名
+          find android lib -type f \( -name "*.gradle" -o -name "*.xml" -o -name "*.dart" -o -name "*.java" -o -name "*.kt" \) \
             -exec sed -i 's/com\.astrbot\.astrbot_android/com.astrbot.astrbot_android1/g' {} +
+          # 重命名 Java 目录
+          mv android/app/src/main/java/com/astrbot/astrbot_android \
+             android/app/src/main/java/com/astrbot/astrbot_android1 2>/dev/null || true
 
       - name: Install dependencies
         run: flutter pub get
