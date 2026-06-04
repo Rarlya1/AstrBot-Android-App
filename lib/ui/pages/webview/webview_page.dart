@@ -26,13 +26,13 @@ class _WebViewPageState extends State<WebViewPage> {
   void initState() {
     super.initState();
     _initSystemUI();
-    // 监控自定义 WebView 列表变化，清空原生端缓存
+    // 监控自定义WebView列表变化，清空自定义WebView缓存
     ever(homeController.customWebViews, (_) {
-      _nativeWebViewChannel.invokeMethod('closeAllWebViews');
+      _nativeWebViewChannel.invokeMethod('closeWebViews', homeController.napCatWebUiEnabledRx.value ? 2 : 1);
     });
-    // NapCat 开关变化时也清缓存
+    // NapCat开关变化时清理NapCat的WebView缓存
     ever(homeController.napCatWebUiEnabledRx, (_) {
-      _nativeWebViewChannel.invokeMethod('closeAllWebViews');
+      _nativeWebViewChannel.invokeMethod('closeWebViews', 1);
     });
     // 首次打开自动启动 AstrBot
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -195,7 +195,7 @@ class _WebViewPageState extends State<WebViewPage> {
                   final token = homeController.napCatWebUiToken.value;
                   url = token.isNotEmpty
                       ? 'http://127.0.0.1:6099/webui?token=$token'
-                      : 'http://127.0.0.1:6099/webui';
+                      : 'http://127.0.0.1:6099/webui/web_login';
                   title = 'NapCat';
                 } else {
                   // 自定义 WebView
