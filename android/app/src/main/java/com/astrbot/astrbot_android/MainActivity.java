@@ -81,16 +81,6 @@ public class MainActivity extends FragmentActivity {
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), "astrbot_native_webview")
             .setMethodCallHandler((call, result) -> {
                 switch (call.method) {
-                    case "openUrl": {
-                        // 外链 → 系统浏览器
-                        String url = call.argument("url");
-                        if (url != null) {
-                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                            startActivity(browserIntent);
-                        }
-                        result.success(true);
-                        break;
-                    }
                     case "openMainView": {
                         // 主面板 → 叠加式 WebView
                         String url = call.argument("url");
@@ -226,7 +216,27 @@ public class MainActivity extends FragmentActivity {
                 }
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                    return false; // 在同 WebView 打开
+                    String url = request.getUrl().toString();
+                    if (url == null) return false;
+                    try {
+                        java.net.URI uri = java.net.URI.create(url);
+                        String host = uri.getHost();
+                        if (host != null) {
+                            String hl = host.toLowerCase();
+                            // 本地链接在 WebView 内打开
+                            if (hl.equals("localhost") || hl.equals("127.0.0.1")
+                                || hl.equals("0.0.0.0") || hl.startsWith("192.168.")
+                                || hl.startsWith("10.") || hl.startsWith("172.")) {
+                                return false;
+                            }
+                        }
+                        // 外部链接在系统浏览器打开
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        startActivity(browserIntent);
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
                 }
             });
 
