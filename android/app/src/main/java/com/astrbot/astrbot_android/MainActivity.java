@@ -114,7 +114,7 @@ public class MainActivity extends FragmentActivity {
                         break;
                     }
                     case "closeWebViews": {
-                        int fromIndex = call.argument(Integer.class.getName());
+                        int fromIndex = (Integer) call.arguments();
                         for (int i = tabWebViews.size() - 1; i >= fromIndex; i--) {
                             WebView twv = tabWebViews.valueAt(i);
                             if (twv != null) {
