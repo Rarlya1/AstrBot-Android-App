@@ -195,7 +195,7 @@ class _WebViewPageState extends State<WebViewPage> {
                   final token = homeController.napCatWebUiToken.value;
                   url = token.isNotEmpty
                       ? 'http://127.0.0.1:6099/webui?token=$token'
-                      : 'http://127.0.0.1:6099/webui/web_login';
+                      : 'http://127.0.0.1:6099/webui';
                   title = 'NapCat';
                 } else {
                   // 自定义 WebView
