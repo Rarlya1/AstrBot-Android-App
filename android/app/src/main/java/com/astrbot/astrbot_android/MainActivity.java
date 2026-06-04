@@ -21,6 +21,8 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import java.util.HashMap;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
@@ -48,10 +50,11 @@ public class MainActivity extends FragmentActivity {
     private static final int DOUBLE_BACK_INTERVAL = 2000;
 
     /* ── 覆盖层 WebView ── */
-    private android.util.SparseArray<WebView> tabWebViews = new android.util.SparseArray<>();
-    private int activeTabIndex = -1;
+    private HashMap<String, WebView> tabWebViews = new HashMap<>();
+    private String activeTabTitle = null;
     private int navBarHeightPx = 0;         // 由 Flutter 传入的底部导航栏高度
     private int statusBarHeightPx = 0;        // 由 Flutter 传入的状态栏高度
+    private String lastNapCatToken = null;    // 由 Flutter 传入的 NapCat WebUI Token
     private ValueCallback<Uri[]> overlayFilePathCallback;
 
     @Override
@@ -78,33 +81,20 @@ public class MainActivity extends FragmentActivity {
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), "astrbot_native_webview")
             .setMethodCallHandler((call, result) -> {
                 switch (call.method) {
-                    case "openUrl": {
-                        // 外链 → 系统浏览器
-                        String url = call.argument("url");
-                        if (url != null) {
-                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                            startActivity(browserIntent);
-                        }
-                        result.success(true);
-                        break;
-                    }
                     case "openMainView": {
                         // 主面板 → 叠加式 WebView
                         String url = call.argument("url");
                         String title = call.argument("title");
-                        Integer tabIdx = call.argument("tabIndex");
-                        int tabIndex = tabIdx != null ? tabIdx : 0;
                         Integer navH = call.argument("navBarHeight");
                         Integer statusH = call.argument("statusBarHeight");
                         if (navH != null) navBarHeightPx = navH;
                         if (statusH != null) statusBarHeightPx = statusH;
-                        showOverlayWebView(url, title, tabIndex);
+                        showOverlayWebView(url, title);
                         result.success(true);
                         break;
                     }
                     case "clearCache": {
-                        for (int i = 0; i < tabWebViews.size(); i++) {
-                            WebView twv = tabWebViews.valueAt(i);
+                        for (WebView twv : tabWebViews.values()) {
                             if (twv != null) {
                                 twv.clearCache(true);
                             }
@@ -112,16 +102,20 @@ public class MainActivity extends FragmentActivity {
                         result.success(true);
                         break;
                     }
-                    case "closeAllWebViews": {
-                        for (int i = 0; i < tabWebViews.size(); i++) {
-                            WebView twv = tabWebViews.valueAt(i);
-                            if (twv != null) {
-                                ViewGroup parent = (ViewGroup) twv.getParent();
-                                if (parent != null) parent.removeView(twv);
-                                twv.destroy();
-                            }
+                    case "closeWebView": {
+                        String title = (String) call.arguments();
+                        WebView twv = tabWebViews.remove(title);
+                        if (twv != null) {
+                            ViewGroup parent = (ViewGroup) twv.getParent();
+                            if (parent != null) parent.removeView(twv);
+                            twv.destroy();
                         }
-                        tabWebViews.clear();
+                        result.success(true);
+                        break;
+                    }
+                    case "setNapCatToken": {
+                        String token = call.argument(String.class.getName());
+                        if (token != null) lastNapCatToken = token;
                         result.success(true);
                         break;
                     }
@@ -132,7 +126,7 @@ public class MainActivity extends FragmentActivity {
                     }
                     case "navigateWebView": {
                         String url = call.argument("url");
-                        WebView wv = tabWebViews.get(activeTabIndex);
+                        WebView wv = tabWebViews.get(activeTabTitle);
                         if (wv != null && url != null)
                             wv.loadUrl(url);
                         result.success(true);
@@ -161,28 +155,27 @@ public class MainActivity extends FragmentActivity {
 
     @SuppressLint("SetJavaScriptEnabled")
     private void hideOverlayWebView() {
-        if (activeTabIndex != -1) {
-            WebView wv = tabWebViews.get(activeTabIndex);
+        if (activeTabTitle != null) {
+            WebView wv = tabWebViews.get(activeTabTitle);
             if (wv != null) wv.setVisibility(View.GONE);
         }
     }
 
-    private void showOverlayWebView(String url, String title, int tabIndex) {
+    private void showOverlayWebView(String url, String title) {
         FrameLayout container = findViewById(com.astrbot.astrbot_android.R.id.fl_container);
         if (container == null) return;
 
         // 先隐藏所有 WebView
-        for (int i = 0; i < tabWebViews.size(); i++) {
-            WebView wv = tabWebViews.valueAt(i);
+        for (WebView wv : tabWebViews.values()) {
             if (wv != null) wv.setVisibility(View.GONE);
         }
 
         // 获取或创建当前 tab 的 WebView
-        WebView wv = tabWebViews.get(tabIndex);
+        WebView wv = tabWebViews.get(title);
         if (wv == null) {
             wv = new WebView(this);
 
-            // 修复白屏：给 WebView 独立硬件层
+            // 给 WebView 独立硬件层
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
             }
@@ -214,10 +207,36 @@ public class MainActivity extends FragmentActivity {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     disableZoom(view);
+                    // 如果是 NapCat 登录页且已有 token，自动重载
+                    if (url != null && url.contains("web_login")
+                            && lastNapCatToken != null && !lastNapCatToken.isEmpty()) {
+                        String tokenUrl = "http://127.0.0.1:6099/webui?token=" + lastNapCatToken;
+                        view.loadUrl(tokenUrl);
+                    }
                 }
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                    return false; // 在同 WebView 打开
+                    String url = request.getUrl().toString();
+                    if (url == null) return false;
+                    try {
+                        java.net.URI uri = java.net.URI.create(url);
+                        String host = uri.getHost();
+                        if (host != null) {
+                            String hl = host.toLowerCase();
+                            // 本地链接在 WebView 内打开
+                            if (hl.equals("localhost") || hl.equals("127.0.0.1")
+                                || hl.equals("0.0.0.0") || hl.startsWith("192.168.")
+                                || hl.startsWith("10.") || hl.startsWith("172.")) {
+                                return false;
+                            }
+                        }
+                        // 外部链接在系统浏览器打开
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        startActivity(browserIntent);
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
                 }
             });
 
@@ -248,9 +267,9 @@ public class MainActivity extends FragmentActivity {
 
             // 首次创建，加载 URL
             wv.loadUrl(url);
-            tabWebViews.put(tabIndex, wv);
+            tabWebViews.put(title, wv);
         } else {
-            // 更新 margin
+            // 已有 WebView，更新 margin
             ViewGroup.MarginLayoutParams mlp =
                     (ViewGroup.MarginLayoutParams) wv.getLayoutParams();
             int newTop = statusBarHeightPx > 0 ? statusBarHeightPx : 0;
@@ -263,7 +282,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         wv.setVisibility(View.VISIBLE);
-        activeTabIndex = tabIndex;
+        activeTabTitle = title;
     }
 
     private void disableZoom(WebView view) {
@@ -284,7 +303,7 @@ public class MainActivity extends FragmentActivity {
     @Override
     public void onBackPressed() {
         // 先给覆盖层 WebView 返回机会
-        WebView wv = tabWebViews.get(activeTabIndex);
+        WebView wv = tabWebViews.get(activeTabTitle);
         if (wv != null && wv.canGoBack()) {
             wv.goBack();
             return;
@@ -361,8 +380,7 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     protected void onDestroy() {
-        for (int i = 0; i < tabWebViews.size(); i++) {
-            WebView twv = tabWebViews.valueAt(i);
+        for (WebView twv : tabWebViews.values()) {
             if (twv != null) twv.destroy();
         }
         tabWebViews.clear();

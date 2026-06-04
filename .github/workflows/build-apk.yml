@@ -9,6 +9,13 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        flavor:
+          - suffix: ''
+            apk_name: 'AstrBot_1.5.3fix'
+          - suffix: '.clone'
+            apk_name: 'AstrBot_1.5.3fix.clone'
     runs-on: ubuntu-latest
     
     steps:
@@ -31,14 +38,29 @@ jobs:
         run: |
           sed -i 's/path: \^1.9.1/path: ^1.9.0/' pubspec.yaml
 
+      - name: Rename package for clone build
+        if: matrix.flavor.suffix != ''
+        run: |
+          # 替换包名
+          find android lib -type f \( -name "*.gradle" -o -name "*.xml" -o -name "*.dart" -o -name "*.java" -o -name "*.kt" \) \
+            -exec sed -i 's/com\.astrbot\.astrbot_android/com.astrbot.astrbot_android1/g' {} +
+          # 重命名 Java 目录
+          mv android/app/src/main/java/com/astrbot/astrbot_android \
+             android/app/src/main/java/com/astrbot/astrbot_android1 2>/dev/null || true
+
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --release
 
+      - name: Rename APK
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/${{ matrix.flavor.apk_name }}.apk
+
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: apk-files
-          path: build/app/outputs/flutter-apk/*.apk
+          name: ${{ matrix.flavor.apk_name }}
+          path: build/app/outputs/flutter-apk/${{ matrix.flavor.apk_name }}.apk

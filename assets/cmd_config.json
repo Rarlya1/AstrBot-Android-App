@@ -130,7 +130,10 @@
     "enable": true,
     "username": "astrbot",
     "password": "77b90590a8945a7d36c963981a307dc9",
-    "jwt_secret": "60cee8cf12978fcd66f66136a9bd0df4407e90c16bfd6590f8018b8c0bccf8a2",
+    "pbkdf2_password": "pbkdf2_sha256$600000$ab9b258812035f393e6f5d1d1e35f092$d70d8c327943f74c8f5401d44e08d4f4251d44bd4b322bde9390b75650649df8",
+    "password_storage_upgraded": true,
+    "password_change_required": true,
+    "jwt_secret": "507b3d7e6ff17cede3dbf30ab0a8f70167ca2b3cdcba61928f11dd9c445a81ae",
     "host": "0.0.0.0",
     "port": 6185
   },
@@ -180,3 +183,4 @@
   "kb_final_top_k": 5,
   "kb_agentic_mode": false
 }
+

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
@@ -16,6 +17,7 @@ import '../routes/app_routes.dart';
 import 'terminal_tab_manager.dart';
 
 class HomeController extends GetxController {
+  static const _nativeWebViewChannel = MethodChannel('astrbot_native_webview');
   // 终端标签页管理器
   late final TerminalTabManager terminalTabManager;
   // bool vsCodeStaring = false;
@@ -343,6 +345,11 @@ class HomeController extends GetxController {
           if (token != null) {
             napCatWebUiToken.value = token;
             Log.i('捕获到 NapCat Token: $token', tag: 'AstrBot');
+            // 通知 Java 侧存储 token，用于 WebView 自动重载
+            try {
+              const _napcatChannel = MethodChannel('astrbot_native_webview');
+              _napcatChannel.invokeMethod('setNapCatToken', token);
+            } catch (_) {}
           }
         }
       }
@@ -748,16 +755,21 @@ class HomeController extends GetxController {
   // 删除自定义 WebView
   void removeCustomWebView(int index) {
     if (index >= 0 && index < customWebViews.length) {
+      final title = customWebViews[index]['title'] ?? customWebViews[index]['url'] ?? '';
       customWebViews.removeAt(index);
       _saveCustomWebViews();
+      _nativeWebViewChannel.invokeMethod('closeWebView', title);
     }
   }
 
   // 更新自定义 WebView
   void updateCustomWebView(int index, String title, String url) {
     if (index >= 0 && index < customWebViews.length) {
+      final oldTitle = customWebViews[index]['title'] ?? customWebViews[index]['url'] ?? '';
       customWebViews[index] = {'title': title, 'url': url};
       _saveCustomWebViews();
+      // URL或标题变了，清除旧的 WebView 缓存
+      _nativeWebViewChannel.invokeMethod('closeWebView', oldTitle);
     }
   }
 
@@ -765,6 +777,7 @@ class HomeController extends GetxController {
   void setNapCatWebUiEnabled(bool value) {
     napCatWebUiEnabled.set(value);
     napCatWebUiEnabledRx.value = value;
+    _nativeWebViewChannel.invokeMethod('closeWebView', 'NapCat');
   }
 
   // 更新显示终端白色文本状态（用于同步响应式变量）
@@ -786,12 +799,12 @@ class HomeController extends GetxController {
     try {
       if (pseudoTerminal != null) {
         Log.i('正在关闭主终端进程...', tag: 'AstrBot');
-        pseudoTerminal?.kill(ProcessSignal.sigkill);
+        pseudoTerminal?.kill();
         pseudoTerminal = null;
       }
       if (napcatTerminal != null) {
         Log.i('正在关闭 NapCat 终端进程...', tag: 'AstrBot-Napcat');
-        napcatTerminal?.kill(ProcessSignal.sigkill);
+        napcatTerminal?.kill();
         napcatTerminal = null;
       }
     } catch (e) {

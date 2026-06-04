@@ -26,17 +26,9 @@ class _WebViewPageState extends State<WebViewPage> {
   void initState() {
     super.initState();
     _initSystemUI();
-    // 监控自定义 WebView 列表变化，清空原生端缓存
-    ever(homeController.customWebViews, (_) {
-      _nativeWebViewChannel.invokeMethod('closeAllWebViews');
-    });
-    // NapCat 开关变化时也清缓存
-    ever(homeController.napCatWebUiEnabledRx, (_) {
-      _nativeWebViewChannel.invokeMethod('closeAllWebViews');
-    });
     // 首次打开自动启动 AstrBot
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot', tabIndex: 0);
+      _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
     });
   }
 
@@ -63,7 +55,7 @@ class _WebViewPageState extends State<WebViewPage> {
   }
 
   /// 在原生 WebView Activity 中打开 URL
-  Future<void> _openInNativeWebView(String url, String title, {int tabIndex = 0}) async {
+  Future<void> _openInNativeWebView(String url, String title) async {
     try {
       final pxRatio = MediaQuery.of(context).devicePixelRatio;
       final bottomNavHeight = (MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight) * pxRatio;
@@ -71,7 +63,6 @@ class _WebViewPageState extends State<WebViewPage> {
       await _nativeWebViewChannel.invokeMethod('openMainView', {
         'url': url,
         'title': title,
-        'tabIndex': tabIndex,
         'navBarHeight': bottomNavHeight.toInt(),
         'statusBarHeight': topPadding.toInt(),
       });
@@ -131,7 +122,7 @@ class _WebViewPageState extends State<WebViewPage> {
         homeController.navigateToTab.value = -1;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot', tabIndex: 0);
+            _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
             setState(() {
               _currentIndex = 0;
             });
@@ -165,7 +156,7 @@ class _WebViewPageState extends State<WebViewPage> {
                     const TerminalTabView(),
 
                     // 设置页面
-                    const SettingsPage(key: ValueKey('settings')),
+                    const SettingsPage(),
                   ],
                 ),
               ),
@@ -209,7 +200,7 @@ class _WebViewPageState extends State<WebViewPage> {
                   }
                 }
                 // 在原生 Activity 中打开
-                _openInNativeWebView(url, title, tabIndex: index);
+                _openInNativeWebView(url, title);
                 setState(() {
                   _currentIndex = index;
                 });
