@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
@@ -251,7 +252,7 @@ class HomeController extends GetxController {
         // 使用路由跳转
         Get.toNamed(AppRoutes.webview);
         // 杀掉启动时产生的多余终端进程
-        // try { Process.run('pkill', ['-f', 'bash|tee']); } catch (_) {}
+        try { Process.run('pkill', ['-f', 'bash|tee']); } catch (_) {}
         webviewHasOpen = true; // 只有真正打开webview时才设置为true
       });
     }
@@ -343,6 +344,11 @@ class HomeController extends GetxController {
           if (token != null) {
             napCatWebUiToken.value = token;
             Log.i('捕获到 NapCat Token: $token', tag: 'AstrBot');
+            // 通知 Java 侧存储 token，用于 WebView 自动重载
+            try {
+              const _napcatChannel = MethodChannel('astrbot_native_webview');
+              _napcatChannel.invokeMethod('setNapCatToken', token);
+            } catch (_) {}
           }
         }
       }
