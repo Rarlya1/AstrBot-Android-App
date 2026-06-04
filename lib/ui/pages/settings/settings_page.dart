@@ -462,6 +462,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 url = 'http://127.0.0.1:$url';
               }
 
+              // 检查标题是否已存在
+              final bool exists = homeController.customWebViews.any((wv) =>
+                  (wv['title'] ?? '') == title);
+              if (exists) {
+                Get.snackbar(
+                  '添加失败',
+                  '标题 "$title" 已存在',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+                return;
+              }
+
               homeController.addCustomWebView(title, url);
               Get.back();
 
@@ -539,6 +553,23 @@ class _SettingsPageState extends State<SettingsPage> {
               // 如果URL不包含协议前缀,自动添加 http://127.0.0.1:
               if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = 'http://127.0.0.1:$url';
+              }
+
+              // 修改标题时检查是否与其他已有标题重复
+              final String currentTitle = homeController.customWebViews[index]['title'] ?? '';
+              if (title != currentTitle) {
+                final bool exists = homeController.customWebViews.any((wv) =>
+                    (wv['title'] ?? '') == title);
+                if (exists) {
+                  Get.snackbar(
+                    '修改失败',
+                    '标题 "$title" 已存在',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                  return;
+                }
               }
 
               homeController.updateCustomWebView(index, title, url);
