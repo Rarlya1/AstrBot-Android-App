@@ -39,7 +39,7 @@ jobs:
           sed -i 's/path: \^1.9.1/path: ^1.9.0/' pubspec.yaml
 
       - name: Rename package for clone build
-        if: matrix.flavor.suffix != ''
+        if: ${{ matrix.flavor.suffix != '' }}
         run: |
            # 替换包名
           find android lib -type f \( -name "*.gradle" -o -name "*.xml" -o -name "*.dart" -o -name "*.java" -o -name "*.kt" \) \
