@@ -52,6 +52,7 @@ public class MainActivity extends FragmentActivity {
     private int activeTabIndex = -1;
     private int navBarHeightPx = 0;         // 由 Flutter 传入的底部导航栏高度
     private int statusBarHeightPx = 0;        // 由 Flutter 传入的状态栏高度
+    private String lastNapCatToken = null;    // 由 Flutter 传入的 NapCat WebUI Token
     private ValueCallback<Uri[]> overlayFilePathCallback;
 
     @Override
@@ -112,16 +113,23 @@ public class MainActivity extends FragmentActivity {
                         result.success(true);
                         break;
                     }
-                    case "closeAllWebViews": {
-                        for (int i = 0; i < tabWebViews.size(); i++) {
+                    case "closeWebViews": {
+                        int fromIndex = call.argument(Integer.class.getName());
+                        for (int i = tabWebViews.size() - 1; i >= fromIndex; i--) {
                             WebView twv = tabWebViews.valueAt(i);
                             if (twv != null) {
                                 ViewGroup parent = (ViewGroup) twv.getParent();
                                 if (parent != null) parent.removeView(twv);
                                 twv.destroy();
                             }
+                            tabWebViews.removeAt(i);
                         }
-                        tabWebViews.clear();
+                        result.success(true);
+                        break;
+                    }
+                    case "setNapCatToken": {
+                        String token = call.argument(String.class.getName());
+                        if (token != null) lastNapCatToken = token;
                         result.success(true);
                         break;
                     }
@@ -182,7 +190,7 @@ public class MainActivity extends FragmentActivity {
         if (wv == null) {
             wv = new WebView(this);
 
-            // 修复白屏：给 WebView 独立硬件层
+            // 给 WebView 独立硬件层
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
             }
@@ -214,6 +222,12 @@ public class MainActivity extends FragmentActivity {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     disableZoom(view);
+                    // 如果是 NapCat 登录页且已有 token，自动重载
+                    if (url != null && url.contains("web_login")
+                            && lastNapCatToken != null && !lastNapCatToken.isEmpty()) {
+                        String tokenUrl = "http://127.0.0.1:6099/webui?token=" + lastNapCatToken;
+                        view.loadUrl(tokenUrl);
+                    }
                 }
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
