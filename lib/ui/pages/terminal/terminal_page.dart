@@ -126,20 +126,21 @@ class _TerminalPageState extends State<TerminalPage> {
                                 if (controller.showDirectEnterBtn.value)
                                   Padding(
                                     padding: EdgeInsets.only(top: 12.w),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        onPressed: () => controller.forceEnterWebView(),
-                                        icon: const Icon(Icons.open_in_new, size: 18),
-                                        label: const Text('直接进入'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue,
-                                          foregroundColor: Colors.white,
-                                          padding: EdgeInsets.symmetric(vertical: 8.w),
+                                    child: Center(
+                                      child: FractionallySizedBox(
+                                        widthFactor: 0.5,
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => controller.forceEnterWebView(),
+                                          label: const Text('直接进入'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                            foregroundColor: Colors.white,
+                                            padding: EdgeInsets.symmetric(vertical: 8.w),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  )
                               ],
                             );
                           }),
