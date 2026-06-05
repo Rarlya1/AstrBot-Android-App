@@ -34,6 +34,7 @@ class HomeController extends GetxController {
   final RxList<Map<String, String>> customWebViews =
       <Map<String, String>>[].obs; // 自定义 WebView 列表
   final RxInt navigateToTab = (-1).obs; // 通知 WebViewPage 切换标签页
+  final RxBool showDirectEnterBtn = false.obs; // "直接进入"按钮
   Dialog? _qrcodeDialog;
   StreamSubscription? _qrcodeSubscription;
   StreamSubscription? _webviewSubscription; // 添加webview监听订阅
@@ -51,6 +52,7 @@ class HomeController extends GetxController {
   bool _isLocalhostDetected = false; // localhost:6185 检测标志
   bool _isQrcodeProcessed = false; // 二维码处理完成标志
   Timer? _localhostFallbackTimer; // 10秒后备定时器
+    Timer? _directEnterTimer; // 直接进入按钮计时器
   bool _isAppInForeground = true; // 应用是否在前台
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
   String _pendingOutput = ''; // 待处理的输出缓冲
@@ -79,6 +81,14 @@ class HomeController extends GetxController {
       progressFile.writeAsStringSync('1');
     }
     update();
+  }
+
+  // "直接进入" - 强行把两个条件置 true 然后跳转
+  void forceEnterWebView() {
+    _isLocalhostDetected = true;
+    _isQrcodeProcessed = true;
+    showDirectEnterBtn.value = false;
+    _checkAndNavigateToWebview();
   }
 
   // 使用 login_ubuntu 函数，传入要执行的命令
@@ -546,6 +556,12 @@ class HomeController extends GetxController {
           terminal.buffer.clear();
           terminal.buffer.setCursor(0, 0);
           Log.i('检测到 AstrBot 配置中，清除终端内容并开始过滤非彩色终端输出', tag: 'AstrBot');
+          // 20秒后显示"直接进入"按钮
+          _directEnterTimer?.cancel();
+          _directEnterTimer = Timer(const Duration(seconds: 20), () {
+            showDirectEnterBtn.value = true;
+            Log.i('20秒已到，显示"直接进入"按钮', tag: 'AstrBot');
+          });
         }
 
         update();
@@ -792,6 +808,7 @@ class HomeController extends GetxController {
     _qrcodeSubscription?.cancel();
     _webviewSubscription?.cancel();
     _localhostFallbackTimer?.cancel();
+    _directEnterTimer?.cancel();
     _qrcodeSubscription = null;
     _webviewSubscription = null;
 
