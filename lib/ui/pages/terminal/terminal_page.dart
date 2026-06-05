@@ -134,7 +134,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                           label: const Text('直接进入'),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                            foregroundColor: Colors.white,
+                                            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
                                             padding: EdgeInsets.symmetric(vertical: 8.w),
                                           ),
                                         ),
