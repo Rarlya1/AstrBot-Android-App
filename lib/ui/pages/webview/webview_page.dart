@@ -162,12 +162,11 @@ class _WebViewPageState extends State<WebViewPage> {
                 ),
               ),
               // Web 标签页的状态栏区域画白，避免透明背景露黑
-              if (validCurrentIndex < webTitles.length)
-                Positioned(
-                  top: 0, left: 0, right: 0,
-                  height: MediaQuery.of(context).padding.top,
-                  child: const ColoredBox(color: Colors.white),
-                ),
+              Positioned(
+                top: 0, left: 0, right: 0,
+                height: MediaQuery.of(context).padding.top,
+                child: const ColoredBox(color: Colors.white),
+              ),
             ],
           ),
           bottomNavigationBar: WebViewBottomNavBar(
