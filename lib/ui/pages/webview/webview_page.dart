@@ -122,6 +122,7 @@ class _WebViewPageState extends State<WebViewPage> {
         homeController.navigateToTab.value = -1;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
+            _nativeWebViewChannel.invokeMethod('closeWebView', 'AstrBot');
             _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
             setState(() {
               _currentIndex = 0;
@@ -138,7 +139,7 @@ class _WebViewPageState extends State<WebViewPage> {
         ),
         child: Scaffold(
           // Web 标签页时透明让 SurfaceView 下的 WebView 透出来
-          backgroundColor: validCurrentIndex < webTitles.length ? Colors.transparent : Colors.white,
+          backgroundColor: Colors.transparent,
           body: Stack(
             children: [
               SafeArea(
@@ -161,12 +162,11 @@ class _WebViewPageState extends State<WebViewPage> {
                 ),
               ),
               // Web 标签页的状态栏区域画白，避免透明背景露黑
-              if (validCurrentIndex < webTitles.length)
-                Positioned(
-                  top: 0, left: 0, right: 0,
-                  height: MediaQuery.of(context).padding.top,
-                  child: const ColoredBox(color: Colors.white),
-                ),
+              Positioned(
+                top: 0, left: 0, right: 0,
+                height: MediaQuery.of(context).padding.top,
+                child: const ColoredBox(color: Colors.white),
+              ),
             ],
           ),
           bottomNavigationBar: WebViewBottomNavBar(

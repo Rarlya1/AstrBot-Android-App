@@ -91,6 +91,7 @@ class _TerminalPageState extends State<TerminalPage> {
                           SizedBox(height: 12.w),
                           GetBuilder<HomeController>(builder: (controller) {
                             return Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Stack(
                                   children: [
@@ -121,6 +122,25 @@ class _TerminalPageState extends State<TerminalPage> {
                                     color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
+                                // "直接进入"按钮，出现在加载进度页面内
+                                if (controller.showDirectEnterBtn.value)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 12.w),
+                                    child: Center(
+                                      child: FractionallySizedBox(
+                                        widthFactor: 0.5,
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => controller.forceEnterWebView(),
+                                          label: const Text('直接进入'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                                            padding: EdgeInsets.symmetric(vertical: 8.w),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
                               ],
                             );
                           }),

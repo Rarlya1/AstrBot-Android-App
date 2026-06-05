@@ -114,7 +114,7 @@ public class MainActivity extends FragmentActivity {
                         break;
                     }
                     case "setNapCatToken": {
-                        String token = call.argument(String.class.getName());
+                        String token = (String) call.arguments();
                         if (token != null) lastNapCatToken = token;
                         result.success(true);
                         break;
@@ -207,11 +207,17 @@ public class MainActivity extends FragmentActivity {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     disableZoom(view);
-                    // 如果是 NapCat 登录页且已有 token，自动重载
-                    if (url != null && url.contains("web_login")
-                            && lastNapCatToken != null && !lastNapCatToken.isEmpty()) {
-                        String tokenUrl = "http://127.0.0.1:6099/webui?token=" + lastNapCatToken;
-                        view.loadUrl(tokenUrl);
+                    // NapCat 登录页自动填充 token
+                    if (url.contains("6099/webui") && lastNapCatToken != null && !lastNapCatToken.isEmpty()) {
+                        final String safeToken = lastNapCatToken.replace("'", "\\'");
+                        view.evaluateJavascript(
+                            "(function(){" +
+                            "var inp=document.querySelector('input[placeholder*=\\\"请输入token\\\"]');" +
+                            "if(inp&&!inp.value){" +
+                            "inp.value='" + safeToken + "';" +
+                            "inp.dispatchEvent(new Event('input',{bubbles:true}));" +
+                            "var btn=document.querySelector('button')||document.querySelector('[type=submit]');" +
+                            "if(btn)setTimeout(function(){btn.click()},300)}})()", null);
                     }
                 }
                 @Override
