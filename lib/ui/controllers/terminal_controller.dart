@@ -556,12 +556,12 @@ class HomeController extends GetxController {
           terminal.buffer.clear();
           terminal.buffer.setCursor(0, 0);
           Log.i('检测到 AstrBot 配置中，清除终端内容并开始过滤非彩色终端输出', tag: 'AstrBot');
-          // 10秒后显示"直接进入"按钮
+          // 15秒后显示"直接进入"按钮
           _directEnterTimer?.cancel();
-          _directEnterTimer = Timer(const Duration(seconds: 10), () {
+          _directEnterTimer = Timer(const Duration(seconds: 15), () {
             showDirectEnterBtn.value = true;
             update();
-            Log.i('10秒已到，显示"直接进入"按钮', tag: 'AstrBot');
+            Log.i('15秒已到，显示"直接进入"按钮', tag: 'AstrBot');
           });
         }
 
