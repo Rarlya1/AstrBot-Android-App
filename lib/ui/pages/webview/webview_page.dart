@@ -122,6 +122,7 @@ class _WebViewPageState extends State<WebViewPage> {
         homeController.navigateToTab.value = -1;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
+            _nativeWebViewChannel.invokeMethod('closeWebView', 'AstrBot');
             _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
             setState(() {
               _currentIndex = 0;
