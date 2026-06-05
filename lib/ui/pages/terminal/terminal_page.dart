@@ -133,7 +133,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                           onPressed: () => controller.forceEnterWebView(),
                                           label: const Text('直接进入'),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Theme.of(context).colorScheme.surface,
+                                            backgroundColor: Theme.of(context).colorScheme.PrimaryContainer,
                                             foregroundColor: Colors.white,
                                             padding: EdgeInsets.symmetric(vertical: 8.w),
                                           ),
