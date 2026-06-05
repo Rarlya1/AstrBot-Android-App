@@ -51,8 +51,8 @@ class HomeController extends GetxController {
   bool webviewHasOpen = false;
   bool _isLocalhostDetected = false; // localhost:6185 检测标志
   bool _isQrcodeProcessed = false; // 二维码处理完成标志
-  Timer? _localhostFallbackTimer; // 10秒后备定时器
-    Timer? _directEnterTimer; // 直接进入按钮计时器
+  Timer? _localhostFallbackTimer; // napcat后备定时器
+  Timer? _directEnterTimer; // 直接进入按钮计时器
   bool _isAppInForeground = true; // 应用是否在前台
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
   String _pendingOutput = ''; // 待处理的输出缓冲
@@ -297,9 +297,9 @@ class HomeController extends GetxController {
         // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
 
-        // 10秒后备：若 _isQrcodeProcessed 仍未满足则强行置为 true
+        // 5秒后备：若 _isQrcodeProcessed 仍未满足则强行置为 true
         _localhostFallbackTimer?.cancel();
-        _localhostFallbackTimer = Timer(const Duration(seconds: 10), () {
+        _localhostFallbackTimer = Timer(const Duration(seconds: 5), () {
           if (!_isQrcodeProcessed) {
             _isQrcodeProcessed = true;
             _checkAndNavigateToWebview();
@@ -556,11 +556,11 @@ class HomeController extends GetxController {
           terminal.buffer.clear();
           terminal.buffer.setCursor(0, 0);
           Log.i('检测到 AstrBot 配置中，清除终端内容并开始过滤非彩色终端输出', tag: 'AstrBot');
-          // 20秒后显示"直接进入"按钮
+          // 10秒后显示"直接进入"按钮
           _directEnterTimer?.cancel();
-          _directEnterTimer = Timer(const Duration(seconds: 20), () {
+          _directEnterTimer = Timer(const Duration(seconds: 10), () {
             showDirectEnterBtn.value = true;
-            Log.i('20秒已到，显示"直接进入"按钮', tag: 'AstrBot');
+            Log.i('10秒已到，显示"直接进入"按钮', tag: 'AstrBot');
           });
         }
 
