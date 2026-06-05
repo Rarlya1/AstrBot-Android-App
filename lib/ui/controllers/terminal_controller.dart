@@ -560,6 +560,7 @@ class HomeController extends GetxController {
           _directEnterTimer?.cancel();
           _directEnterTimer = Timer(const Duration(seconds: 10), () {
             showDirectEnterBtn.value = true;
+            update();
             Log.i('10秒已到，显示"直接进入"按钮', tag: 'AstrBot');
           });
         }
