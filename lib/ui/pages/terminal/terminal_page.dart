@@ -121,6 +121,24 @@ class _TerminalPageState extends State<TerminalPage> {
                                     color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
+                                // "直接进入"按钮，出现在加载进度页面内
+                                if (controller.showDirectEnterBtn.value)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 12.w),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => controller.forceEnterWebView(),
+                                        icon: const Icon(Icons.open_in_new, size: 18),
+                                        label: const Text('直接进入'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue,
+                                          foregroundColor: Colors.white,
+                                          padding: EdgeInsets.symmetric(vertical: 8.w),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                               ],
                             );
                           }),
