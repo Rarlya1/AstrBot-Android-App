@@ -207,17 +207,23 @@ public class MainActivity extends FragmentActivity {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     disableZoom(view);
+                    // NapCat 登录页自动填充 token
+                    if (url.contains("6099/webui") && lastNapCatToken != null && !lastNapCatToken.isEmpty()) {
+                        final String safeToken = lastNapCatToken.replace("'", "\\'");
+                        view.evaluateJavascript(
+                            "(function(){" +
+                            "var inp=document.querySelector('input[placeholder*=\\\"请输入token\\\"]');" +
+                            "if(inp&&!inp.value){" +
+                            "inp.value='" + safeToken + "';" +
+                            "inp.dispatchEvent(new Event('input',{bubbles:true}));" +
+                            "var btn=document.querySelector('button')||document.querySelector('[type=submit]');" +
+                            "if(btn)setTimeout(function(){btn.click()},300)}})()", null);
+                    }
                 }
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                     String url = request.getUrl().toString();
                     if (url == null) return false;
-                    // NapCat 登录页且已有 token → 直接重定向到带 token 的地址
-                    if (url.contains("6099/webui/web_login")
-                            && lastNapCatToken != null && !lastNapCatToken.isEmpty()) {
-                        view.loadUrl("http://127.0.0.1:6099/webui?token=" + lastNapCatToken);
-                        return true;
-                    }
                     try {
                         java.net.URI uri = java.net.URI.create(url);
                         String host = uri.getHost();
