@@ -139,7 +139,7 @@ class _WebViewPageState extends State<WebViewPage> {
         ),
         child: Scaffold(
           // Web 标签页时透明让 SurfaceView 下的 WebView 透出来
-          backgroundColor: validCurrentIndex < webTitles.length ? Colors.transparent : Colors.white,
+          backgroundColor: Colors.transparent,
           body: Stack(
             children: [
               SafeArea(
