@@ -91,6 +91,7 @@ class _TerminalPageState extends State<TerminalPage> {
                           SizedBox(height: 12.w),
                           GetBuilder<HomeController>(builder: (controller) {
                             return Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Stack(
                                   children: [
