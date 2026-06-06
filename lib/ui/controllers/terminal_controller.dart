@@ -355,11 +355,6 @@ class HomeController extends GetxController {
           if (token != null) {
             napCatWebUiToken.value = token;
             Log.i('捕获到 NapCat Token: $token', tag: 'AstrBot');
-            // 通知 Java 侧存储 token，用于 WebView 自动重载
-            try {
-              const _napcatChannel = MethodChannel('astrbot_native_webview');
-              _napcatChannel.invokeMethod('setNapCatToken', token);
-            } catch (_) {}
           }
         }
       }
