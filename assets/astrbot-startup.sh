@@ -210,6 +210,10 @@ install_napcat(){
 EOF
   fi
 fi
+  # 修改 NapCat WebUI 登录凭证有效期为7天
+  if [ -f "$HOME/napcat/napcat.mjs" ]; then
+    sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/napcat/napcat.mjs"
+  fi
   progress_echo "Napcat $L_INSTALLED"
 }
 

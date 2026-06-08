@@ -54,7 +54,6 @@ public class MainActivity extends FragmentActivity {
     private String activeTabTitle = null;
     private int navBarHeightPx = 0;         // 由 Flutter 传入的底部导航栏高度
     private int statusBarHeightPx = 0;        // 由 Flutter 传入的状态栏高度
-    private String lastNapCatToken = null;    // 由 Flutter 传入的 NapCat WebUI Token
     private ValueCallback<Uri[]> overlayFilePathCallback;
 
     @Override
@@ -110,12 +109,6 @@ public class MainActivity extends FragmentActivity {
                             if (parent != null) parent.removeView(twv);
                             twv.destroy();
                         }
-                        result.success(true);
-                        break;
-                    }
-                    case "setNapCatToken": {
-                        String token = (String) call.arguments();
-                        if (token != null) lastNapCatToken = token;
                         result.success(true);
                         break;
                     }
@@ -207,18 +200,6 @@ public class MainActivity extends FragmentActivity {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     disableZoom(view);
-                    // NapCat 登录页自动填充 token
-                    if (url.contains("6099/webui") && lastNapCatToken != null && !lastNapCatToken.isEmpty()) {
-                        final String safeToken = lastNapCatToken.replace("'", "\\'");
-                        view.evaluateJavascript(
-                            "(function(){" +
-                            "var inp=document.querySelector('input[placeholder*=\\\"请输入token\\\"]');" +
-                            "if(inp&&!inp.value){" +
-                            "inp.value='" + safeToken + "';" +
-                            "inp.dispatchEvent(new Event('input',{bubbles:true}));" +
-                            "var btn=document.querySelector('button')||document.querySelector('[type=submit]');" +
-                            "if(btn)setTimeout(function(){btn.click()},300)}})()", null);
-                    }
                 }
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {

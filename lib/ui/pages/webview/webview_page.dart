@@ -54,7 +54,7 @@ class _WebViewPageState extends State<WebViewPage> {
     ));
   }
 
-  /// 在原生 WebView Activity 中打开 URL
+  /// 在原生 Activity 中打开 WebView
   Future<void> _openInNativeWebView(String url, String title) async {
     try {
       final pxRatio = MediaQuery.of(context).devicePixelRatio;
