@@ -262,8 +262,6 @@ class HomeController extends GetxController {
       Future.microtask(() {
         // 使用路由跳转
         Get.toNamed(AppRoutes.webview);
-        // 杀掉启动时产生的多余终端进程
-        try { Process.run('pkill', ['-f', 'bash|tee']); } catch (_) {}
         webviewHasOpen = true; // 只有真正打开webview时才设置为true
       });
     }
