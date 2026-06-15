@@ -1,6 +1,15 @@
 
 # 🤖 AstrBot 安卓 App：让每一个普通人都能拥有自己的 AI 聊天机器人
 
+> ⚠️ **特别声明**：  
+> 本项目为基于[zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App) 二次开发。  
+> 在原版的基础上，优化：
+> 1. 修复卡在加载界面，加载时间过长会显示"直接进入"按钮
+> 2. 修复初始密码astrbot不可用，AstrBot的账号密码均为**astrbot**
+> 4. WebView从flutter层迁移到原生Android覆盖层
+> 5. 网页加载时机延后
+> 其他优化: 清理多余进程，延长napcat webui登录有效期等
+
 你是否想过，用自己的 QQ 号，变成一个可以自动回复消息、调用大模型进行智能对话的“AI 账号”？
 
 **AstrBot 安卓 App** 正是为此而生。
