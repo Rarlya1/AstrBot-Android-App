@@ -214,6 +214,10 @@ fi
   if [ -f "$HOME/napcat/napcat.mjs" ]; then
     sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/napcat/napcat.mjs"
   fi
+  # 清理napcat残留进程标识
+  if [ -f "/tmp/.X1-lock"]; then
+    sudo rm -f "/tmp/.X1-lock"
+  fi
   progress_echo "Napcat $L_INSTALLED"
 }
 
@@ -299,6 +303,7 @@ install_astrbot(){
         
         # 解压备份到 data 目录
         if tar -xzf "$LATEST_BACKUP" -C "$INSTALL_DIR"; then
+          rm -r "$INSTALL_DIR/data/dist"
           echo "备份恢复成功"
           echo "AstrBot 数据已从备份恢复"
           REINSTALL_PLUGINS_FLAG=1  # 备份恢复成功，需要重装插件依赖
@@ -370,6 +375,7 @@ install_astrbot(){
   # 使用 uv run --no-sync main.py 启动（跳过依赖同步）
   progress_echo "AstrBot 配置中"
 
+  ( sleep 15; pkill -f "bash|tee|uv" ) &
   if ! $HOME/.local/bin/uv run --no-sync main.py; then
     echo "AstrBot 启动失败"
     exit 1
