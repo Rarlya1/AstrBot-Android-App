@@ -215,7 +215,7 @@ fi
     sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/napcat/napcat.mjs"
   fi
   # 清理napcat残留进程标识
-  if [ -f "/tmp/.X1-lock"]; then
+  if [ -f "/tmp/.X1-lock" ]; then
     sudo rm -f "/tmp/.X1-lock"
   fi
   progress_echo "Napcat $L_INSTALLED"
@@ -271,9 +271,12 @@ install_astrbot(){
       # 克隆到临时目录
       echo "正在克隆 AstrBot 仓库，分支/标签: $CLONE_BRANCH..."
       if ! git clone --depth=1 --branch "$CLONE_BRANCH" ${target_proxy:+${target_proxy}/}https://github.com/AstrBotDevs/AstrBot.git "$CLONE_TEMP_DIR"; then
-        echo "克隆 AstrBot 仓库失败"
-        rm -rf "$CLONE_TEMP_DIR"  # 清理失败的临时目录
-        exit 1
+        echo "克隆 AstrBot 仓库失败，回退到 master 分支"
+        if ! git clone --depth=1 --branch "master" ${target_proxy:+${target_proxy}/}https://github.com/AstrBotDevs/AstrBot.git "$CLONE_TEMP_DIR"; then
+          echo "克隆 AstrBot 仓库失败"
+          rm -rf "$CLONE_TEMP_DIR"  # 清理失败的临时目录
+          exit 1
+        fi
       fi
     fi
 
