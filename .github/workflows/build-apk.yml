@@ -24,19 +24,32 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
+          java-version: '17'
           distribution: 'temurin'
-          java-version: 17
+          cache: gradle
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.4'
           channel: 'stable'
           cache: true
 
-      - name: Fix path dep for CI
+      - name: Prepare NDK and CMake directories
         run: |
-          sed -i 's/path: \^1.9.1/path: ^1.9.0/' pubspec.yaml
+          sudo mkdir -p /usr/local/lib/android/sdk/ndk
+          sudo mkdir -p /usr/local/lib/android/sdk/cmake
+          sudo chown -R $USER:$USER /usr/local/lib/android/sdk/ndk
+          sudo chown -R $USER:$USER /usr/local/lib/android/sdk/cmake
+
+      - name: Cache Android NDK and CMake
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk
+            /usr/local/lib/android/sdk/cmake
+          key: ${{ runner.os }}-android-ndk-cmake-${{ hashFiles('android/app/build.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-android-ndk-cmake-
 
       - name: Rename package for clone build
         if: matrix.flavor.suffix != ''
