@@ -110,7 +110,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                     AnimatedContainer(
                                       duration: 300.milliseconds,
                                       height: 5.w,
-                                      width: 300.w * controller.progress,
+                                      width: 300.w * controller.progress.value,
                                       decoration: BoxDecoration(
                                         color: Theme.of(context).colorScheme.primary,
                                         borderRadius: BorderRadius.circular(3.w),
@@ -120,7 +120,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                 ),
                                 SizedBox(height: 8.w),
                                 Text(
-                                  controller.currentProgress.trim(),
+                                  controller.currentProgress.value.trim(),
                                   style: TextStyle(
                                     fontSize: 12.w,
                                     fontWeight: FontWeight.bold,

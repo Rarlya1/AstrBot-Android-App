@@ -226,7 +226,7 @@ class _Btn extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs..primary),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.primary),
             ),
           ),
         ),
