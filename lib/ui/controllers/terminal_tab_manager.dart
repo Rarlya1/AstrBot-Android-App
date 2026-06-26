@@ -61,6 +61,20 @@ class TerminalTabManager extends GetxController {
     activeTabIndex.value = 0;
   }
 
+  /// 添加固定的NapCat终端标签页
+  void addNapCatTab(Terminal terminal) {
+    final napcatTab = TerminalTab(
+      id: 'fixed_napcat',
+      title: 'NapCat',
+      type: TerminalTabType.fixed,
+      terminal: terminal,
+      pty: null,
+      isActive: false,
+    );
+
+    tabs.add(napcatTab);
+  }
+
   /// 添加新的系统终端标签页
   Future<void> addSystemTerminalTab() async {
     try {
@@ -70,7 +84,7 @@ class TerminalTabManager extends GetxController {
 
       // 创建新的终端实例
       final newTerminal = Terminal(
-        maxLines: 10000,
+        maxLines: 4096,
       );
 
       // 创建新的PTY实例
@@ -127,6 +141,10 @@ class TerminalTabManager extends GetxController {
 
         // 标签页创建后，正常输出所有内容
         if (tabCreated) {
+          // 自动清理旧行，避免行数满后不更新
+          while (newTerminal.buffer.lines.length >= newTerminal.maxLines) {
+            newTerminal.buffer.lines.trimStart(1);
+          }
           newTerminal.write(event);
         }
         // 标签页创建前，不输出任何内容（跳过登录过程的输出）

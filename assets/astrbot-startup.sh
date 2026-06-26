@@ -149,6 +149,13 @@ install_uv(){
   fi
 }
 
+# 通用重试函数
+retry() {
+  local m=$1 d="$2" n=0; shift 2
+  while [ $n -lt $m ]; do n=$((n+1)); [ $n -gt 1 ] && echo "$d 重试(第${n}次)..." && sleep 3; "$@" && return 0; done
+  echo "$d 失败"; return 1
+}
+
 install_napcat(){
   # 检查是否已安装
   if [ ! -f "$HOME/launcher.sh" ]; then
@@ -165,12 +172,17 @@ install_napcat(){
     rm -rf $HOME/napcat
     cd $HOME
     echo "Napcat $L_NOT_INSTALLED，$L_INSTALLING..."
-    curl -o napcat.sh https://raw.githubusercontent.com/NapNeko/napcat-linux-installer/refs/heads/main/install.sh
-    if ! chmod +x napcat.sh; then
-      echo "设置 napcat.sh 执行权限失败"
-      exit 1
-    fi
-    bash napcat.sh
+
+    # 下载安装程序（10秒超时，最多重试3次）
+    rm -f napcat.sh
+    retry 3 "下载 napcat.sh" curl -o napcat.sh --connect-timeout 10 --max-time 10 https://raw.githubusercontent.com/NapNeko/napcat-linux-installer/refs/heads/main/install.sh
+    [ $? -ne 0 ] && rm -f napcat.sh && exit 1
+
+    chmod +x napcat.sh
+
+    # 运行安装程序（最多重试3次）
+    retry 3 "NapCat 安装" bash napcat.sh
+    [ $? -ne 0 ] && exit 1
     
     # 恢复配置目录
     if [ -d "$HOME/napcat_config_backup" ]; then

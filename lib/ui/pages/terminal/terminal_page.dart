@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
 import 'package:xterm/xterm.dart';
@@ -58,11 +59,25 @@ class _TerminalPageState extends State<TerminalPage> {
                   // IgnorePointer
                   child: AbsorbPointer(
                     absorbing: false,
-                    child: TerminalView(
-                      controller.terminal,
-                      readOnly: false,
-                      backgroundOpacity: 1,
-                      theme: ManjaroTerminalTheme(),
+                    child: GestureDetector(
+                      onLongPress: () {
+                        final selected = controller.terminal.copySelection();
+                        if (selected.isNotEmpty) {
+                          Clipboard.setData(ClipboardData(text: selected));
+                          Get.snackbar(
+                            '已复制',
+                            '终端文本已复制到剪贴板',
+                            snackPosition: SnackPosition.BOTTOM,
+                            duration: const Duration(seconds: 2),
+                          );
+                        }
+                      },
+                      child: TerminalView(
+                        controller.terminal,
+                        readOnly: false,
+                        backgroundOpacity: 1,
+                        theme: ManjaroTerminalTheme(),
+                      ),
                     ),
                   ),
                 ),
@@ -122,25 +137,6 @@ class _TerminalPageState extends State<TerminalPage> {
                                     color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
-                                // "直接进入"按钮，出现在加载进度页面内
-                                if (controller.showDirectEnterBtn.value)
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 12.w),
-                                    child: Center(
-                                      child: FractionallySizedBox(
-                                        widthFactor: 0.5,
-                                        child: ElevatedButton.icon(
-                                          onPressed: () => controller.forceEnterWebView(),
-                                          label: const Text('直接进入'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                                            padding: EdgeInsets.symmetric(vertical: 8.w),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
                               ],
                             );
                           }),

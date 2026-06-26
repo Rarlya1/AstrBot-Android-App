@@ -10,6 +10,7 @@ import 'package:xterm/xterm.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/config/app_config.dart';
+import '../../core/constants/scripts.dart' as scripts;
 import '../../generated/l10n.dart';
 import '../../core/constants/scripts.dart';
 import '../../core/utils/file_utils.dart';
@@ -34,13 +35,12 @@ class HomeController extends GetxController {
   final RxList<Map<String, String>> customWebViews =
       <Map<String, String>>[].obs; // 自定义 WebView 列表
   final RxInt navigateToTab = (-1).obs; // 通知 WebViewPage 切换标签页
-  final RxBool showDirectEnterBtn = false.obs; // "直接进入"按钮
   Dialog? _qrcodeDialog;
   StreamSubscription? _qrcodeSubscription;
   StreamSubscription? _webviewSubscription; // 添加webview监听订阅
 
   late Terminal terminal = Terminal(
-    maxLines: 10000,
+    maxLines: 4096,
     onResize: (width, height, pixelWidth, pixelHeight) {
       pseudoTerminal?.resize(height, width);
     },
@@ -48,11 +48,13 @@ class HomeController extends GetxController {
       pseudoTerminal?.writeString(data);
     },
   );
+  late Terminal napcatTerminalView = Terminal(
+    maxLines: 4096,
+  );
   bool webviewHasOpen = false;
   bool _isLocalhostDetected = false; // localhost:6185 检测标志
   bool _isQrcodeProcessed = false; // 二维码处理完成标志
   Timer? _localhostFallbackTimer; // napcat后备定时器
-  Timer? _directEnterTimer; // 直接进入按钮计时器
   bool _isAppInForeground = true; // 应用是否在前台
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
   String _pendingOutput = ''; // 待处理的输出缓冲
@@ -81,14 +83,6 @@ class HomeController extends GetxController {
       progressFile.writeAsStringSync('1');
     }
     update();
-  }
-
-  // "直接进入" - 强行把两个条件置 true 然后跳转
-  void forceEnterWebView() {
-    _isLocalhostDetected = true;
-    _isQrcodeProcessed = true;
-    showDirectEnterBtn.value = false;
-    _checkAndNavigateToWebview();
   }
 
   // 使用 login_ubuntu 函数，传入要执行的命令
@@ -231,7 +225,7 @@ class HomeController extends GetxController {
 
     // 检查设置：如果允许显示白色文本，则显示所有内容
     if (showTerminalWhiteText.get() == true) {
-      terminal.write(event);
+      _writeWithTrim(terminal, event);
       return;
     }
 
@@ -245,7 +239,7 @@ class HomeController extends GetxController {
         hasReset) {
       // 只有当输出是纯彩色的（不包含白色文本）时才输出
       if (isPurelyColored) {
-        terminal.write(_pendingOutput);
+        _writeWithTrim(terminal, _pendingOutput);
       }
       // 清空缓冲
       _pendingOutput = '';
@@ -318,7 +312,7 @@ class HomeController extends GetxController {
         _processColoredOutput(event);
       } else {
         // 配置前显示所有输出
-        terminal.write(event);
+        _writeWithTrim(terminal, event);
       }
     });
   }
@@ -332,6 +326,9 @@ class HomeController extends GetxController {
         .listen((event) async {
       // 先判断订阅是否已取消，避免重复处理
       if (_qrcodeSubscription == null) return;
+
+      // 写入 NapCat 终端视图
+      _writeWithTrim(napcatTerminalView, event);
 
       // 输出到 Flutter 控制台
       // Output to Flutter console
@@ -549,13 +546,6 @@ class HomeController extends GetxController {
           terminal.buffer.clear();
           terminal.buffer.setCursor(0, 0);
           Log.i('检测到 AstrBot 配置中，清除终端内容并开始过滤非彩色终端输出', tag: 'AstrBot');
-          // 15秒后显示"直接进入"按钮
-          _directEnterTimer?.cancel();
-          _directEnterTimer = Timer(const Duration(seconds: 15), () {
-            showDirectEnterBtn.value = true;
-            update();
-            Log.i('15秒已到，显示"直接进入"按钮', tag: 'AstrBot');
-          });
         }
 
         update();
@@ -705,6 +695,16 @@ class HomeController extends GetxController {
         ));
       }
 
+      // 检查是否已安装 AstrBot
+      final dataDir = Directory('${scripts.ubuntuPath}/root/AstrBot/data');
+      if (await dataDir.exists()) {
+        // 已安装，直接跳转
+        _isLocalhostDetected = true;
+        _isQrcodeProcessed = true;
+        webviewHasOpen = true;
+        Get.toNamed(AppRoutes.webview);
+      }
+
       // 加载并启动 AstrBot
       loadAstrBot();
 
@@ -713,6 +713,11 @@ class HomeController extends GetxController {
       Future.delayed(const Duration(milliseconds: 500), () {
         terminalTabManager.initializeFixedTab(terminal);
       });
+    });
+
+    // 添加 NapCat 终端标签页
+    Future.delayed(const Duration(milliseconds: 500), () {
+      terminalTabManager.addNapCatTab(napcatTerminalView);
     });
 
     // 监听应用生命周期状态变化
@@ -796,13 +801,22 @@ class HomeController extends GetxController {
     showTerminalWhiteTextRx.value = value;
   }
 
+  /// 写入终端并自动清理旧行，避免行数满后不更新
+  void _writeWithTrim(Terminal t, String data) {
+    try {
+      while (t.buffer.lines.length >= t.maxLines) {
+        t.buffer.lines.trimStart(1);
+      }
+    } catch (_) {}
+    t.write(data);
+  }
+
   @override
   void onClose() {
     // 清理订阅，避免内存泄漏
     _qrcodeSubscription?.cancel();
     _webviewSubscription?.cancel();
     _localhostFallbackTimer?.cancel();
-    _directEnterTimer?.cancel();
     _qrcodeSubscription = null;
     _webviewSubscription = null;
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:xterm/xterm.dart';
 
@@ -175,12 +176,26 @@ class _TerminalTabViewState extends State<TerminalTabView> {
 
   /// 构建终端内容
   Widget _buildTerminalContent(TerminalTab tab) {
-    return ClipRect(
-      child: TerminalView(
-        tab.terminal,
-        readOnly: tab.type == TerminalTabType.fixed, // 固定终端只读
-        backgroundOpacity: 1,
-        theme: ManjaroTerminalTheme(),
+    return GestureDetector(
+      onLongPress: () {
+        final selected = tab.terminal.copySelection();
+        if (selected.isNotEmpty) {
+          Clipboard.setData(ClipboardData(text: selected));
+          Get.snackbar(
+            '已复制',
+            '终端文本已复制到剪贴板',
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      },
+      child: ClipRect(
+        child: TerminalView(
+          tab.terminal,
+          readOnly: tab.type == TerminalTabType.fixed, // 固定终端只读
+          backgroundOpacity: 1,
+          theme: ManjaroTerminalTheme(),
+        ),
       ),
     );
   }
