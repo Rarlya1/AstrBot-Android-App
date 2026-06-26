@@ -85,12 +85,6 @@ class HomeController extends GetxController {
     update();
   }
 
-  // 使用 login_ubuntu 函数，传入要执行的命令
-  // Use login_ubuntu function, passing the command to execute
-  String get command {
-    return 'source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "bash /root/launcher.sh | tee /root/napcat.log"\n';
-  }
-
   // 检测文本是否包含彩色 ANSI 代码(非白色/默认色)
   // Check if text contains colored ANSI codes (non-white/default)
   bool _hasColoredAnsiCode(String text) {
@@ -534,7 +528,7 @@ class HomeController extends GetxController {
 
         // 当进度到达 "Napcat 已安装" 时，启动 NapCat 终端
         if (content.contains('Napcat ${S.current.installed}')) {
-          napcatTerminal?.writeString('$command\n');
+          napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "bash /root/launcher.sh"\n');
           bumpProgress();
           Log.i('检测到 Napcat 已安装，启动 NapCat 终端', tag: 'AstrBot');
         }

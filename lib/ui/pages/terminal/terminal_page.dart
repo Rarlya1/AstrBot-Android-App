@@ -62,29 +62,12 @@ class _TerminalPageState extends State<TerminalPage> {
                   // IgnorePointer
                   child: AbsorbPointer(
                     absorbing: false,
-                    child: GestureDetector(
-                      onLongPress: () {
-                        final range = terminalController.selection;
-                        if (range != null && !range.isCollapsed) {
-                          final text = controller.terminal.buffer.getText(range);
-                          if (text.isNotEmpty) {
-                            Clipboard.setData(ClipboardData(text: text));
-                            Get.snackbar(
-                              '已复制',
-                              '终端文本已复制到剪贴板',
-                              snackPosition: SnackPosition.BOTTOM,
-                              duration: const Duration(seconds: 2),
-                            );
-                          }
-                        }
-                      },
-                      child: TerminalView(
-                        controller.terminal,
-                        controller: terminalController,
-                        readOnly: false,
-                        backgroundOpacity: 1,
-                        theme: ManjaroTerminalTheme(),
-                      ),
+                    child: TerminalView(
+                      controller.terminal,
+                      controller: terminalController,
+                      readOnly: false,
+                      backgroundOpacity: 1,
+                      theme: ManjaroTerminalTheme(),
                     ),
                   ),
                 ),
