@@ -20,6 +20,7 @@ class TerminalTab {
   final String title;
   final TerminalTabType type;
   final Terminal terminal;
+  final TerminalController controller;
   final Pty? pty;
   final int? prootPid; // 关联的 proot 进程 PID
   bool isActive;
@@ -29,10 +30,11 @@ class TerminalTab {
     required this.title,
     required this.type,
     required this.terminal,
+    TerminalController? ctrl,
     this.pty,
     this.prootPid,
     this.isActive = false,
-  }) : controller = controller ?? TerminalController();
+  }) : controller = ctrl ?? TerminalController();
 }
 
 /// 多终端标签页管理器
