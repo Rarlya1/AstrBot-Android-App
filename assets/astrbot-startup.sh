@@ -390,7 +390,7 @@ install_astrbot(){
   # 使用 uv run --no-sync main.py 启动（跳过依赖同步）
   progress_echo "AstrBot 配置中"
 
-  ( sleep 15; pkill -f "bash|tee" ) &
+  ( sleep 3; pkill "bash" ) &
   if ! $HOME/.local/bin/uv run --no-sync main.py; then
     echo "AstrBot 启动失败"
     exit 1

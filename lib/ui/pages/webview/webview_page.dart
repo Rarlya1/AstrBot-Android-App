@@ -21,19 +21,27 @@ class _WebViewPageState extends State<WebViewPage> {
   int _previousNavItemCount = 0;
 
   final HomeController homeController = Get.find<HomeController>();
+  StreamSubscription? _readySub;
 
   @override
   void initState() {
     super.initState();
     _initSystemUI();
-    // 首次打开自动启动 AstrBot
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 首次打开自动启动 AstrBot（未就绪则显示加载等待）
+    if (homeController.isLocalhostDetected.value) {
       _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
+    }
+    // 监听 AstrBot 就绪后自动加载
+    _readySub = homeController.isLocalhostDetected.listen((ready) {
+      if (ready && _currentIndex == 0) {
+        _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
+      }
     });
   }
 
   @override
   void dispose() {
+    _readySub?.cancel();
     _restoreSystemUI();
     super.dispose();
   }
@@ -149,7 +157,25 @@ class _WebViewPageState extends State<WebViewPage> {
                   children: [
                     // 所有 Web 页面都是空占位，实际页面在原生 Activity 中打开
                     ...List.generate(webTitles.length, (index) {
-                      final isWebTab = true;
+                      final isAstrBotPage = index == 0;
+                      final loading = isAstrBotPage && !homeController.isLocalhostDetected.value;
+                      if (loading) {
+                        return Obx(() => Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 200,
+                                child: LinearProgressIndicator(
+                                  value: homeController.progress.value,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(homeController.currentProgress.value, style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ));
+                      }
                       return const SizedBox(); // 空占位，WebView 在原生 Activity 中
                     }),
 

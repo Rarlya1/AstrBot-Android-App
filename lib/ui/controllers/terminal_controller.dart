@@ -52,18 +52,17 @@ class HomeController extends GetxController {
     maxLines: 4096,
   );
   bool webviewHasOpen = false;
-  bool _isLocalhostDetected = false; // localhost:6185 检测标志
+  final RxBool isLocalhostDetected = false.obs; // localhost:6185 检测标志
   bool _isQrcodeProcessed = false; // 二维码处理完成标志
-  Timer? _localhostFallbackTimer; // napcat后备定时器
   bool _isAppInForeground = true; // 应用是否在前台
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
   String _pendingOutput = ''; // 待处理的输出缓冲
 
   File progressFile = File('${RuntimeEnvir.tmpPath}/progress');
   File progressDesFile = File('${RuntimeEnvir.tmpPath}/progress_des');
-  double progress = 0.0;
+  final RxDouble progress = 0.0.obs;
   double step = 14.0;
-  String currentProgress = '';
+  final RxString currentProgress = ''.obs;
 
   // 进度 +1
   // Progress +1
@@ -243,7 +242,7 @@ class HomeController extends GetxController {
   // 检查两个条件是否都满足，如果满足则触发跳转
   void _checkAndNavigateToWebview() {
     // 只有当两个条件都满足且应用在前台时才跳转
-    if (_isLocalhostDetected &&
+    if (isLocalhostDetected.value &&
         _isQrcodeProcessed &&
         _isAppInForeground &&
         !webviewHasOpen) {
@@ -277,20 +276,11 @@ class HomeController extends GetxController {
 
       // 检查是否包含 localhost:6185
       if (event.contains('http://localhost:6185')) {
-        _isLocalhostDetected = true;
+        isLocalhostDetected.value = true;
         bumpProgress();
 
         // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
-
-        // 5秒后备：若 _isQrcodeProcessed 仍未满足则强行置为 true
-        _localhostFallbackTimer?.cancel();
-        _localhostFallbackTimer = Timer(const Duration(seconds: 5), () {
-          if (!_isQrcodeProcessed) {
-            _isQrcodeProcessed = true;
-            _checkAndNavigateToWebview();
-          }
-        });
 
         Future.delayed(const Duration(milliseconds: 2000), () {
           update();
@@ -406,7 +396,6 @@ class HomeController extends GetxController {
 
         // 标记二维码处理完成
         _isQrcodeProcessed = true;
-        _localhostFallbackTimer?.cancel();
 
         // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
@@ -419,7 +408,6 @@ class HomeController extends GetxController {
       // 检测指令3napcat启动完成（快速登录无二维码）
       if (event.contains('协议适配器初始化完成') && !_isQrcodeProcessed) {
         _isQrcodeProcessed = true;
-        _localhostFallbackTimer?.cancel();
         _checkAndNavigateToWebview();
         await _qrcodeSubscription?.cancel();
         _qrcodeSubscription = null;
@@ -514,8 +502,8 @@ class HomeController extends GetxController {
         if (content.isEmpty) {
           return;
         }
-        progress = int.parse(content) / step;
-        Log.e('progress -> $progress');
+        progress.value = int.parse(content) / step;
+        Log.e('progress -> ${progress.value}');
         update();
       }
     });
@@ -524,7 +512,7 @@ class HomeController extends GetxController {
     progressDesFile.watch(events: FileSystemEvent.all).listen((event) async {
       if (event.type == FileSystemEvent.modify) {
         String content = await progressDesFile.readAsString();
-        currentProgress = content;
+        currentProgress.value = content;
 
         // 当进度到达 "Napcat 已安装" 时，启动 NapCat 终端
         if (content.contains('Napcat ${S.current.installed}')) {
@@ -602,8 +590,8 @@ class HomeController extends GetxController {
   }
 
   void setProgress(String description) {
-    currentProgress = description;
-    terminal.writeProgress(currentProgress);
+    currentProgress.value = description;
+    terminal.writeProgress(currentProgress.value);
   }
 
   Future<void> loadAstrBot() async {
@@ -693,8 +681,6 @@ class HomeController extends GetxController {
       final dataDir = Directory('${scripts.ubuntuPath}/root/AstrBot/data');
       if (await dataDir.exists()) {
         // 已安装，直接跳转
-        _isLocalhostDetected = true;
-        _isQrcodeProcessed = true;
         webviewHasOpen = true;
         Get.toNamed(AppRoutes.webview);
       }
@@ -716,7 +702,7 @@ class HomeController extends GetxController {
         onResume: () {
           _isAppInForeground = true;
           // 当应用回到前台且两个条件都满足但webview未打开时，打开webview
-          if (_isLocalhostDetected && _isQrcodeProcessed && !webviewHasOpen) {
+          if (isLocalhostDetected.value && _isQrcodeProcessed && !webviewHasOpen) {
             Future.microtask(() {
               Get.toNamed(AppRoutes.webview);
               webviewHasOpen = true;
@@ -806,7 +792,6 @@ class HomeController extends GetxController {
     // 清理订阅，避免内存泄漏
     _qrcodeSubscription?.cancel();
     _webviewSubscription?.cancel();
-    _localhostFallbackTimer?.cancel();
     _qrcodeSubscription = null;
     _webviewSubscription = null;
 

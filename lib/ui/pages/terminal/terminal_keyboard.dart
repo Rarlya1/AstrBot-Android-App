@@ -189,7 +189,7 @@ class _ModGroup extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: a ? FontWeight.bold : FontWeight.w500,
-            color: a ? cs.onPrimaryContainer : cs.onSurface,
+            color: a ? cs.onPrimaryContainer : cs.primary,
           ),
         ),
       ),
@@ -226,7 +226,7 @@ class _Btn extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.onSurface),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs..primary),
             ),
           ),
         ),
