@@ -4,6 +4,7 @@ import 'package:flutter_pty/flutter_pty.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
 import 'package:xterm/xterm.dart';
+import 'package:xterm/src/ui/controller.dart';
 
 import '../../core/utils/file_utils.dart';
 
@@ -31,7 +32,7 @@ class TerminalTab {
     this.pty,
     this.prootPid,
     this.isActive = false,
-  });
+  }) : controller = controller ?? TerminalController();
 }
 
 /// 多终端标签页管理器

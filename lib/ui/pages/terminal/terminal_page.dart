@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
 import 'package:xterm/xterm.dart';
+import 'package:xterm/src/ui/controller.dart';
 
 import '../../controllers/terminal_controller.dart';
 import 'terminal_theme.dart';
@@ -19,6 +20,7 @@ class _TerminalPageState extends State<TerminalPage> {
   HomeController controller = Get.put(HomeController());
   ManjaroTerminalTheme terminalTheme = ManjaroTerminalTheme();
   bool visible = false || kDebugMode;
+  final TerminalController terminalController = TerminalController();
 
   @override
   void dispose() {
@@ -35,6 +37,7 @@ class _TerminalPageState extends State<TerminalPage> {
     } catch (e) {
       Log.e('TerminalPage dispose 时出错: $e', tag: 'AstrBot');
     }
+    terminalController.dispose();
     super.dispose();
   }
 
@@ -61,19 +64,23 @@ class _TerminalPageState extends State<TerminalPage> {
                     absorbing: false,
                     child: GestureDetector(
                       onLongPress: () {
-                        final selected = controller.terminal.copySelection();
-                        if (selected.isNotEmpty) {
-                          Clipboard.setData(ClipboardData(text: selected));
-                          Get.snackbar(
-                            '已复制',
-                            '终端文本已复制到剪贴板',
-                            snackPosition: SnackPosition.BOTTOM,
-                            duration: const Duration(seconds: 2),
-                          );
+                        final range = terminalController.selection;
+                        if (range != null && !range.isCollapsed) {
+                          final text = controller.terminal.buffer.getText(range);
+                          if (text.isNotEmpty) {
+                            Clipboard.setData(ClipboardData(text: text));
+                            Get.snackbar(
+                              '已复制',
+                              '终端文本已复制到剪贴板',
+                              snackPosition: SnackPosition.BOTTOM,
+                              duration: const Duration(seconds: 2),
+                            );
+                          }
                         }
                       },
                       child: TerminalView(
                         controller.terminal,
+                        controller: terminalController,
                         readOnly: false,
                         backgroundOpacity: 1,
                         theme: ManjaroTerminalTheme(),
