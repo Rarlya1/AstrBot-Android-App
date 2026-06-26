@@ -711,13 +711,9 @@ class HomeController extends GetxController {
       // 在终端创建完成后初始化固定标签页
       // 等待terminal创建完成
       Future.delayed(const Duration(milliseconds: 500), () {
-        terminalTabManager.initializeFixedTab(terminal);
+        terminalTabManager.initializeFixedTab(terminal,
+          napcatTerminal: napcatTerminalView);
       });
-    });
-
-    // 添加 NapCat 终端标签页
-    Future.delayed(const Duration(milliseconds: 500), () {
-      terminalTabManager.addNapCatTab(napcatTerminalView);
     });
 
     // 监听应用生命周期状态变化
