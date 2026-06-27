@@ -149,6 +149,13 @@ install_uv(){
   fi
 }
 
+# 通用重试函数
+retry() {
+  local m=$1 d="$2" n=0; shift 2
+  while [ $n -lt $m ]; do n=$((n+1)); [ $n -gt 1 ] && echo "$d 重试(第${n}次)..." && sleep 3; "$@" && return 0; done
+  echo "$d 失败"; return 1
+}
+
 install_napcat(){
   # 检查是否已安装
   if [ ! -f "$HOME/launcher.sh" ]; then
@@ -165,12 +172,17 @@ install_napcat(){
     rm -rf $HOME/napcat
     cd $HOME
     echo "Napcat $L_NOT_INSTALLED，$L_INSTALLING..."
-    curl -o napcat.sh https://raw.githubusercontent.com/NapNeko/napcat-linux-installer/refs/heads/main/install.sh
-    if ! chmod +x napcat.sh; then
-      echo "设置 napcat.sh 执行权限失败"
-      exit 1
-    fi
-    bash napcat.sh
+
+    # 下载安装程序（10秒超时，最多重试3次）
+    rm -f napcat.sh
+    retry 3 "下载 napcat.sh" curl -o napcat.sh --connect-timeout 10 --max-time 10 https://raw.githubusercontent.com/NapNeko/napcat-linux-installer/refs/heads/main/install.sh
+    [ $? -ne 0 ] && rm -f napcat.sh && exit 1
+
+    chmod +x napcat.sh
+
+    # 运行安装程序（最多重试3次）
+    retry 3 "NapCat 安装" bash napcat.sh
+    [ $? -ne 0 ] && exit 1
     
     # 恢复配置目录
     if [ -d "$HOME/napcat_config_backup" ]; then
@@ -215,7 +227,7 @@ fi
     sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/napcat/napcat.mjs"
   fi
   # 清理napcat残留进程标识
-  if [ -f "/tmp/.X1-lock"]; then
+  if [ -f "/tmp/.X1-lock" ]; then
     sudo rm -f "/tmp/.X1-lock"
   fi
   progress_echo "Napcat $L_INSTALLED"
@@ -271,9 +283,12 @@ install_astrbot(){
       # 克隆到临时目录
       echo "正在克隆 AstrBot 仓库，分支/标签: $CLONE_BRANCH..."
       if ! git clone --depth=1 --branch "$CLONE_BRANCH" ${target_proxy:+${target_proxy}/}https://github.com/AstrBotDevs/AstrBot.git "$CLONE_TEMP_DIR"; then
-        echo "克隆 AstrBot 仓库失败"
-        rm -rf "$CLONE_TEMP_DIR"  # 清理失败的临时目录
-        exit 1
+        echo "克隆 AstrBot 仓库失败，回退到 master 分支"
+        if ! git clone --depth=1 --branch "master" ${target_proxy:+${target_proxy}/}https://github.com/AstrBotDevs/AstrBot.git "$CLONE_TEMP_DIR"; then
+          echo "克隆 AstrBot 仓库失败"
+          rm -rf "$CLONE_TEMP_DIR"  # 清理失败的临时目录
+          exit 1
+        fi
       fi
     fi
 
@@ -375,7 +390,7 @@ install_astrbot(){
   # 使用 uv run --no-sync main.py 启动（跳过依赖同步）
   progress_echo "AstrBot 配置中"
 
-  ( sleep 15; pkill -f "bash|tee" ) &
+  ( sleep 5; pkill "bash" ) &
   if ! $HOME/.local/bin/uv run --no-sync main.py; then
     echo "AstrBot 启动失败"
     exit 1

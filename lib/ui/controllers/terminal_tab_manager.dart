@@ -4,6 +4,7 @@ import 'package:flutter_pty/flutter_pty.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
 import 'package:xterm/xterm.dart';
+import 'package:xterm/src/ui/controller.dart';
 
 import '../../core/utils/file_utils.dart';
 
@@ -19,6 +20,7 @@ class TerminalTab {
   final String title;
   final TerminalTabType type;
   final Terminal terminal;
+  final TerminalController controller;
   final Pty? pty;
   final int? prootPid; // 关联的 proot 进程 PID
   bool isActive;
@@ -28,10 +30,11 @@ class TerminalTab {
     required this.title,
     required this.type,
     required this.terminal,
+    TerminalController? ctrl,
     this.pty,
     this.prootPid,
     this.isActive = false,
-  });
+  }) : controller = ctrl ?? TerminalController();
 }
 
 /// 多终端标签页管理器
@@ -43,7 +46,7 @@ class TerminalTabManager extends GetxController {
   final RxInt activeTabIndex = 0.obs;
 
   /// 初始化固定的AstrBot终端标签页
-  void initializeFixedTab(Terminal terminal) {
+  void initializeFixedTab(Terminal terminal, {Terminal? napcatTerminal}) {
     // 清空现有标签页
     tabs.clear();
 
@@ -59,6 +62,18 @@ class TerminalTabManager extends GetxController {
 
     tabs.add(fixedTab);
     activeTabIndex.value = 0;
+
+    // 添加NapCat标签页
+    if (napcatTerminal != null && !tabs.any((t) => t.id == 'fixed_napcat')) {
+      tabs.add(TerminalTab(
+        id: 'fixed_napcat',
+        title: 'NapCat',
+        type: TerminalTabType.fixed,
+        terminal: napcatTerminal,
+        pty: null,
+        isActive: false,
+      ));
+    }
   }
 
   /// 添加新的系统终端标签页
@@ -70,7 +85,7 @@ class TerminalTabManager extends GetxController {
 
       // 创建新的终端实例
       final newTerminal = Terminal(
-        maxLines: 10000,
+        maxLines: 4096,
       );
 
       // 创建新的PTY实例
@@ -127,6 +142,10 @@ class TerminalTabManager extends GetxController {
 
         // 标签页创建后，正常输出所有内容
         if (tabCreated) {
+          // 自动清理旧行，避免行数满后不更新
+          while (newTerminal.buffer.lines.length >= newTerminal.maxLines) {
+            newTerminal.buffer.lines.trimStart(1);
+          }
           newTerminal.write(event);
         }
         // 标签页创建前，不输出任何内容（跳过登录过程的输出）
