@@ -39,15 +39,10 @@ class _WebViewPageState extends State<WebViewPage> {
         _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
       }
     });
-    // 监听 NapCat 就绪后刷新 NapCat 页面
+    // 监听 NapCat 就绪后关闭旧 WebView，切回时会重新打开
     _napcatReadySub = homeController.isQrcodeProcessed.listen((ready) {
-      if (ready && _currentIndex == 1 && mounted) {
-        final token = homeController.napCatWebUiToken.value;
-        final url = token.isNotEmpty
-            ? 'http://127.0.0.1:6099/webui?token=$token'
-            : 'http://127.0.0.1:6099/webui';
+      if (ready) {
         _nativeWebViewChannel.invokeMethod('closeWebView', 'NapCat');
-        _openInNativeWebView(url, 'NapCat');
       }
     });
   }
