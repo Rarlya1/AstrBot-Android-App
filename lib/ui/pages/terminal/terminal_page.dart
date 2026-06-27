@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:global_repository/global_repository.dart';
 import 'package:xterm/xterm.dart';
+import 'package:xterm/src/ui/controller.dart';
 
 import '../../controllers/terminal_controller.dart';
 import 'terminal_theme.dart';
@@ -18,6 +20,7 @@ class _TerminalPageState extends State<TerminalPage> {
   HomeController controller = Get.put(HomeController());
   ManjaroTerminalTheme terminalTheme = ManjaroTerminalTheme();
   bool visible = false || kDebugMode;
+  final TerminalController terminalController = TerminalController();
 
   @override
   void dispose() {
@@ -34,6 +37,7 @@ class _TerminalPageState extends State<TerminalPage> {
     } catch (e) {
       Log.e('TerminalPage dispose 时出错: $e', tag: 'AstrBot');
     }
+    terminalController.dispose();
     super.dispose();
   }
 
@@ -60,6 +64,7 @@ class _TerminalPageState extends State<TerminalPage> {
                     absorbing: false,
                     child: TerminalView(
                       controller.terminal,
+                      controller: terminalController,
                       readOnly: false,
                       backgroundOpacity: 1,
                       theme: ManjaroTerminalTheme(),
@@ -105,7 +110,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                     AnimatedContainer(
                                       duration: 300.milliseconds,
                                       height: 5.w,
-                                      width: 300.w * controller.progress,
+                                      width: 300.w * controller.progress.value,
                                       decoration: BoxDecoration(
                                         color: Theme.of(context).colorScheme.primary,
                                         borderRadius: BorderRadius.circular(3.w),
@@ -115,32 +120,13 @@ class _TerminalPageState extends State<TerminalPage> {
                                 ),
                                 SizedBox(height: 8.w),
                                 Text(
-                                  controller.currentProgress.trim(),
+                                  controller.currentProgress.value.trim(),
                                   style: TextStyle(
                                     fontSize: 12.w,
                                     fontWeight: FontWeight.bold,
                                     color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
-                                // "直接进入"按钮，出现在加载进度页面内
-                                if (controller.showDirectEnterBtn.value)
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 12.w),
-                                    child: Center(
-                                      child: FractionallySizedBox(
-                                        widthFactor: 0.5,
-                                        child: ElevatedButton.icon(
-                                          onPressed: () => controller.forceEnterWebView(),
-                                          label: const Text('直接进入'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                                            padding: EdgeInsets.symmetric(vertical: 8.w),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
                               ],
                             );
                           }),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -21,19 +22,40 @@ class _WebViewPageState extends State<WebViewPage> {
   int _previousNavItemCount = 0;
 
   final HomeController homeController = Get.find<HomeController>();
+  StreamSubscription? _readySub;
+  StreamSubscription? _napcatReadySub;
 
   @override
   void initState() {
     super.initState();
     _initSystemUI();
-    // 首次打开自动启动 AstrBot
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 首次打开自动启动 AstrBot（未就绪则显示加载等待）
+    if (homeController.isLocalhostDetected.value) {
       _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
+    }
+    // 监听 AstrBot 就绪后自动加载（仅当前在 AstrBot 标签页时才打开）
+    _readySub = homeController.isLocalhostDetected.listen((ready) {
+      if (ready && _currentIndex == 0 && mounted) {
+        _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
+      }
+    });
+    // 监听 NapCat 就绪后刷新 NapCat 页面
+    _napcatReadySub = homeController.isQrcodeProcessed.listen((ready) {
+      if (ready && _currentIndex == 1 && mounted) {
+        final token = homeController.napCatWebUiToken.value;
+        final url = token.isNotEmpty
+            ? 'http://127.0.0.1:6099/webui?token=$token'
+            : 'http://127.0.0.1:6099/webui';
+        _nativeWebViewChannel.invokeMethod('closeWebView', 'NapCat');
+        _openInNativeWebView(url, 'NapCat');
+      }
     });
   }
 
   @override
   void dispose() {
+    _readySub?.cancel();
+    _napcatReadySub?.cancel();
     _restoreSystemUI();
     super.dispose();
   }
@@ -149,7 +171,27 @@ class _WebViewPageState extends State<WebViewPage> {
                   children: [
                     // 所有 Web 页面都是空占位，实际页面在原生 Activity 中打开
                     ...List.generate(webTitles.length, (index) {
-                      final isWebTab = true;
+                      final isAstrBotPage = index == 0;
+                      final loading = isAstrBotPage && !homeController.isLocalhostDetected.value;
+                      if (loading) {
+                        return Obx(() => Container(
+                          color: Theme.of(context).colorScheme.surface,
+                          child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 200,
+                                child: LinearProgressIndicator(
+                                  value: homeController.progress.value,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(homeController.currentProgress.value, style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        )));
+                      }
                       return const SizedBox(); // 空占位，WebView 在原生 Activity 中
                     }),
 
@@ -178,7 +220,11 @@ class _WebViewPageState extends State<WebViewPage> {
                 String url;
                 String title;
                 if (index == 0) {
-                  // AstrBot
+                  // AstrBot：未就绪时不打开 WebView，显示加载进度
+                  if (!homeController.isLocalhostDetected.value) {
+                    setState(() => _currentIndex = index);
+                    return;
+                  }
                   url = 'http://127.0.0.1:6185';
                   title = 'AstrBot';
                 } else if (napCatEnabled && index == 1) {

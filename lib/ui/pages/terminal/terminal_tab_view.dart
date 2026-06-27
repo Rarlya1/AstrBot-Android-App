@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:xterm/xterm.dart';
+import 'package:xterm/src/ui/controller.dart';
 
 import '../../controllers/terminal_controller.dart';
 import '../../controllers/terminal_tab_manager.dart';
+import 'terminal_keyboard.dart';
 import 'terminal_theme.dart';
 
 /// 终端标签页视图
@@ -175,14 +178,43 @@ class _TerminalTabViewState extends State<TerminalTabView> {
 
   /// 构建终端内容
   Widget _buildTerminalContent(TerminalTab tab) {
-    return ClipRect(
-      child: TerminalView(
-        tab.terminal,
-        readOnly: tab.type == TerminalTabType.fixed, // 固定终端只读
-        backgroundOpacity: 1,
-        theme: ManjaroTerminalTheme(),
-      ),
+    return Column(
+      children: [
+        Expanded(
+          child: Listener(
+            onPointerUp: (_) => _tryCopySelection(tab),
+            child: ClipRect(
+              child: TerminalView(
+                tab.terminal,
+                controller: tab.controller,
+                readOnly: tab.type == TerminalTabType.fixed,
+                backgroundOpacity: 1,
+                theme: ManjaroTerminalTheme(),
+              ),
+            ),
+          ),
+        ),
+        if (tab.type == TerminalTabType.system)
+          TerminalKeyboard(terminal: tab.terminal),
+      ],
     );
+  }
+
+  void _tryCopySelection(TerminalTab tab) {
+    final range = tab.controller.selection;
+    if (range != null && !range.isCollapsed) {
+      final text = tab.terminal.buffer.getText(range);
+      if (text.isNotEmpty) {
+        Clipboard.setData(ClipboardData(text: text));
+        tab.controller.clearSelection();
+        Get.snackbar(
+          '已复制',
+          '终端文本已复制到剪贴板',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    }
   }
 
   /// 显示关闭确认对话框
