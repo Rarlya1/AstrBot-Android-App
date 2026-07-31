@@ -401,16 +401,22 @@ class HomeController extends GetxController {
         _checkAndNavigateToWebview();
 
         // 取消订阅，后续不再监听任何指令
-        await _qrcodeSubscription?.cancel();
-        _qrcodeSubscription = null; // 置空标记已取消
+        // await _qrcodeSubscription?.cancel();
+        // _qrcodeSubscription = null; // 置空标记已取消
       }
 
       // 检测指令3napcat启动完成（快速登录无二维码）
       if (event.contains('协议适配器初始化完成') && !isQrcodeProcessed.value) {
+
+        // 标记二维码处理完成
         isQrcodeProcessed.value = true;
+
+        // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
-        await _qrcodeSubscription?.cancel();
-        _qrcodeSubscription = null;
+
+        // 取消订阅，后续不再监听任何指令
+        // await _qrcodeSubscription?.cancel();
+        // _qrcodeSubscription = null; // 置空标记已取消
       }
 
       // 检测指令4处理登录错误
@@ -516,7 +522,7 @@ class HomeController extends GetxController {
 
         // 当进度到达 "Napcat 已安装" 时，启动 NapCat 终端
         if (content.contains('Napcat ${S.current.installed}')) {
-          napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "bash /root/launcher.sh"\n');
+          napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "cd /root/Napcat; bash ./launcher.sh"\n');
           bumpProgress();
           Log.i('检测到 Napcat 已安装，启动 NapCat 终端', tag: 'AstrBot');
         }
@@ -781,7 +787,7 @@ class HomeController extends GetxController {
   void _writeWithTrim(Terminal t, String data) {
     try {
       while (t.buffer.lines.length >= t.maxLines) {
-        t.buffer.lines.trimStart(1);
+        t.buffer.lines.remove(0, 1);
       }
     } catch (_) {}
     t.write(data);

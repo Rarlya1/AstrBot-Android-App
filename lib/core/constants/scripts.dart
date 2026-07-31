@@ -489,7 +489,7 @@ login_ubuntu(){
     /usr/bin/env -i \
       HOME=/root \
       TERM=xterm-256color \
-      LANG=en_US.UTF-8 \
+      LANG=zh_CN.UTF-8 \
       TZ="$ANDROID_TZ" \
       PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
       HISTFILE=/root/.bash_history \

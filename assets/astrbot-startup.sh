@@ -23,12 +23,12 @@ if [ ! -d "$TMPDIR" ]; then
 fi
 
 
-progress_echo(){
+progress_echo() {
   echo -e "\033[31m- $@\033[0m"
   echo "$@" > "$TMPDIR/progress_des"
 }
 
-bump_progress(){
+bump_progress() {
   current=0
   if [ -f "$TMPDIR/progress" ]; then
     current=$(cat "$TMPDIR/progress" 2>/dev/null || echo 0)
@@ -37,7 +37,7 @@ bump_progress(){
   printf "$next" > "$TMPDIR/progress"
 }
 
-install_sudo_curl_git(){
+install_sudo_curl_git() {
   curl_path=`which curl`
   if [ -z "$curl_path" ]; then
     progress_echo "curl $L_NOT_INSTALLED, $L_INSTALLING..."
@@ -50,6 +50,46 @@ install_sudo_curl_git(){
     progress_echo "curl $L_INSTALLED"
   fi
 }
+
+install_zh-hans() {
+  # 检查是否已安装
+  if ! locale -a | grep -q zh_CN.utf8; then
+    progress_echo "中文语言包 $L_NOT_INSTALLED, $L_INSTALLING..."
+
+    apt-get update
+    apt install locales language-pack-zh-hans fonts-wqy-microhei fonts-noto-cjk -y
+  
+    # 生成中文 locale
+    echo "zh_CN.UTF-8 UTF-8" >> /etc/locale.gen
+    locale-gen zh_CN.UTF-8
+  
+    # 设置系统默认
+    update-locale LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
+  
+    # 添加配置脚本
+    if [ -f /etc/environment ]; then
+      if ! grep -q "LANG=zh_CN" /etc/environment 2>/dev/null; then
+        echo "LANG=zh_CN.UTF-8" >> /etc/environment
+        echo "LC_ALL=zh_CN.UTF-8" >> /etc/environment
+        echo "LANGUAGE=zh_CN:zh" >> /etc/environment
+      fi
+    fi
+    mkdir -p /etc/profile.d
+    if [ ! -f /etc/profile.d/locale.sh ]; then
+      echo 'export LANG=zh_CN.UTF-8' > /etc/profile.d/locale.sh
+      echo 'export LC_ALL=zh_CN.UTF-8' >> /etc/profile.d/locale.sh
+      echo 'export LANGUAGE=zh_CN:zh' >> /etc/profile.d/locale.sh
+      chmod +x /etc/profile.d/locale.sh
+    fi
+  fi
+  # 当前会话生效
+  export LANG=zh_CN.UTF-8
+  export LC_ALL=zh_CN.UTF-8
+  export LANGUAGE=zh_CN:zh
+
+  echo "中文语言包 $L_INSTALLED"
+}
+
 
 network_test() {
     local timeout=10
@@ -89,7 +129,7 @@ network_test() {
     fi
 }
 
-install_uv(){
+install_uv() {
   INSTALL_DIR="$HOME/.local/bin"
   if [ ! -x "$INSTALL_DIR/uv" ]; then
     progress_echo "uv $L_NOT_INSTALLED，$L_INSTALLING..."
@@ -156,21 +196,26 @@ retry() {
   echo "$d 失败"; return 1
 }
 
-install_napcat(){
+install_napcat() {
+  # 检查napcat目录是否存在
+  if [ ! -d "$HOME/Napcat" ]; then
+    mkdir "$HOME/Napcat"
+  fi
+
   # 检查是否已安装
-  if [ ! -f "$HOME/launcher.sh" ]; then
+  if [ ! -f "$HOME/Napcat/launcher.sh" ]; then
     progress_echo "Napcat $L_NOT_INSTALLED，$L_INSTALLING..."
     
     apt --fix-broken install -y
 
     # 备份配置目录（如果存在）
-    if [ -d "$HOME/napcat/config" ]; then
-      echo "备份 NapCat 配置目录..."
-      cp -r "$HOME/napcat/config" "$HOME/napcat_config_backup"
+    if [ -d "$HOME/Napcat/napcat/config" ]; then
+      echo "备份 Napcat 配置目录..."
+      cp -r "$HOME/Napcat/napcat/config" "$HOME/Napcat/napcat_config_backup"
     fi
-    
-    rm -rf $HOME/napcat
-    cd $HOME
+
+    rm -rf $HOME/Napcat/napcat
+    cd $HOME/Napcat
     echo "Napcat $L_NOT_INSTALLED，$L_INSTALLING..."
 
     # 下载安装程序（10秒超时，最多重试3次）
@@ -181,21 +226,21 @@ install_napcat(){
     chmod +x napcat.sh
 
     # 运行安装程序（最多重试3次）
-    retry 3 "NapCat 安装" bash napcat.sh
+    retry 3 "Napcat 安装" bash napcat.sh
     [ $? -ne 0 ] && exit 1
-    
+
     # 恢复配置目录
-    if [ -d "$HOME/napcat_config_backup" ]; then
-      echo "恢复 NapCat 配置目录..."
-      mkdir -p "$HOME/napcat/config"
-      cp -r "$HOME/napcat_config_backup"/* "$HOME/napcat/config/"
-      rm -rf "$HOME/napcat_config_backup"
+    if [ -d "$HOME/Napcat/napcat_config_backup" ]; then
+      echo "恢复 Napcat 配置目录..."
+      mkdir -p "$HOME/Napcat/napcat/config"
+      cp -r "$HOME/Napcat/napcat_config_backup"/* "$HOME/Napcat/napcat/config/"
+      rm -rf "$HOME/Napcat/napcat_config_backup"
     fi
-    
-  # 只在配置文件不存在时写入默认配置
-  if [ ! -f "$HOME/napcat/config/onebot11.json" ]; then
-    echo "写入 onebot11.json 默认配置文件"
-    cat > "$HOME/napcat/config/onebot11.json" <<'EOF'
+
+    # 只在配置文件不存在时写入默认配置
+    if [ ! -f "$HOME/Napcat/napcat/config/onebot11.json" ]; then
+      echo "写入 onebot11.json 默认配置文件"
+      cat > "$HOME/Napcat/napcat/config/onebot11.json" <<'EOF'
 {
   "network": {
     "httpServers": [],
@@ -220,11 +265,12 @@ install_napcat(){
   "parseMultMsg": false
 }
 EOF
+    fi
   fi
-fi
-  # 修改 NapCat WebUI 登录凭证有效期为7天
-  if [ -f "$HOME/napcat/napcat.mjs" ]; then
-    sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/napcat/napcat.mjs"
+
+  # 修改 Napcat WebUI 登录凭证有效期为7天
+  if [ -f "$HOME/Napcat/napcat/napcat.mjs" ]; then
+    sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/Napcat/napcat/napcat.mjs"
   fi
   # 清理napcat残留进程标识
   if [ -f "/tmp/.X1-lock" ]; then
@@ -233,7 +279,7 @@ fi
   progress_echo "Napcat $L_INSTALLED"
 }
 
-install_astrbot(){
+install_astrbot() {
   local INSTALL_DIR="$HOME/AstrBot"
   local CLONE_TEMP_DIR="$HOME/AstrBot_tmp"
   local BACKUP_DIR="/sdcard/Download/AstrBot"
@@ -349,6 +395,7 @@ install_astrbot(){
 
     # 使用 uv sync 同步依赖
     echo "同步 AstrBot 依赖..."
+    cd "$INSTALL_DIR"
     if ! $HOME/.local/bin/uv sync; then
       echo "依赖同步失败"
       exit 1
@@ -398,6 +445,8 @@ install_astrbot(){
 
 }
 
+install_zh-hans
+bump_progress
 install_sudo_curl_git
 bump_progress
 bump_progress
