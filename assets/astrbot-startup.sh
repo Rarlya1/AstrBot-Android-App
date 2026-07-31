@@ -197,20 +197,25 @@ retry() {
 }
 
 install_napcat() {
+  # 检查napcat目录是否存在
+  if [ ! -d "$HOME/Napcat" ]; then
+    mkdir "$HOME/Napcat"
+  fi
+
   # 检查是否已安装
-  if [ ! -f "$HOME/launcher.sh" ]; then
+  if [ ! -f "$HOME/Napcat/launcher.sh" ]; then
     progress_echo "Napcat $L_NOT_INSTALLED，$L_INSTALLING..."
     
     apt --fix-broken install -y
 
     # 备份配置目录（如果存在）
-    if [ -d "$HOME/napcat/config" ]; then
-      echo "备份 NapCat 配置目录..."
-      cp -r "$HOME/napcat/config" "$HOME/napcat_config_backup"
+    if [ -d "$HOME/Napcat/napcat/config" ]; then
+      echo "备份 Napcat 配置目录..."
+      cp -r "$HOME/Napcat/napcat/config" "$HOME/Napcat/napcat_config_backup"
     fi
-    
-    rm -rf $HOME/napcat
-    cd $HOME
+
+    rm -rf $HOME/Napcat/napcat
+    cd $HOME/Napcat
     echo "Napcat $L_NOT_INSTALLED，$L_INSTALLING..."
 
     # 下载安装程序（10秒超时，最多重试3次）
@@ -221,21 +226,21 @@ install_napcat() {
     chmod +x napcat.sh
 
     # 运行安装程序（最多重试3次）
-    retry 3 "NapCat 安装" bash napcat.sh
+    retry 3 "Napcat 安装" bash napcat.sh
     [ $? -ne 0 ] && exit 1
-    
+
     # 恢复配置目录
-    if [ -d "$HOME/napcat_config_backup" ]; then
-      echo "恢复 NapCat 配置目录..."
-      mkdir -p "$HOME/napcat/config"
-      cp -r "$HOME/napcat_config_backup"/* "$HOME/napcat/config/"
-      rm -rf "$HOME/napcat_config_backup"
+    if [ -d "$HOME/Napcat/napcat_config_backup" ]; then
+      echo "恢复 Napcat 配置目录..."
+      mkdir -p "$HOME/Napcat/napcat/config"
+      cp -r "$HOME/Napcat/napcat_config_backup"/* "$HOME/Napcat/napcat/config/"
+      rm -rf "$HOME/Napcat/napcat_config_backup"
     fi
-    
-  # 只在配置文件不存在时写入默认配置
-  if [ ! -f "$HOME/napcat/config/onebot11.json" ]; then
-    echo "写入 onebot11.json 默认配置文件"
-    cat > "$HOME/napcat/config/onebot11.json" <<'EOF'
+
+    # 只在配置文件不存在时写入默认配置
+    if [ ! -f "$HOME/Napcat/napcat/config/onebot11.json" ]; then
+      echo "写入 onebot11.json 默认配置文件"
+      cat > "$HOME/Napcat/napcat/config/onebot11.json" <<'EOF'
 {
   "network": {
     "httpServers": [],
@@ -260,11 +265,12 @@ install_napcat() {
   "parseMultMsg": false
 }
 EOF
+    fi
   fi
-fi
-  # 修改 NapCat WebUI 登录凭证有效期为7天
-  if [ -f "$HOME/napcat/napcat.mjs" ]; then
-    sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/napcat/napcat.mjs"
+
+  # 修改 Napcat WebUI 登录凭证有效期为7天
+  if [ -f "$HOME/Napcat/napcat/napcat.mjs" ]; then
+    sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/Napcat/napcat/napcat.mjs"
   fi
   # 清理napcat残留进程标识
   if [ -f "/tmp/.X1-lock" ]; then
@@ -389,6 +395,7 @@ install_astrbot() {
 
     # 使用 uv sync 同步依赖
     echo "同步 AstrBot 依赖..."
+    cd "$INSTALL_DIR"
     if ! $HOME/.local/bin/uv sync; then
       echo "依赖同步失败"
       exit 1
