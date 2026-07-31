@@ -144,7 +144,7 @@ class TerminalTabManager extends GetxController {
         if (tabCreated) {
           // 自动清理旧行，避免行数满后不更新
           while (newTerminal.buffer.lines.length >= newTerminal.maxLines) {
-            newTerminal.buffer.lines.trimStart(1);
+            newTerminal.buffer.lines.remove(0, 1);
           }
           newTerminal.write(event);
         }

@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/terminal_controller.dart';
+import '../../../core/services/password_manager.dart';
 import '../settings/settings_page.dart';
 import '../terminal/terminal_tab_view.dart';
 import '../../navbar/bottom_nav_bar.dart';
@@ -29,6 +31,13 @@ class _WebViewPageState extends State<WebViewPage> {
   void initState() {
     super.initState();
     _initSystemUI();
+    // 监听来自原生 WebView 的密码保存请求
+    _nativeWebViewChannel.setMethodCallHandler((call) async {
+      if (call.method == 'savePassword') {
+        _handlePasswordSave(call.arguments as String);
+      }
+      return null;
+    });
     // 首次打开自动启动 AstrBot（未就绪则显示加载等待）
     if (homeController.isLocalhostDetected.value) {
       _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
@@ -77,11 +86,17 @@ class _WebViewPageState extends State<WebViewPage> {
       final pxRatio = MediaQuery.of(context).devicePixelRatio;
       final bottomNavHeight = (MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight) * pxRatio;
       final topPadding = MediaQuery.of(context).padding.top * pxRatio;
+      // 获取已保存的密码用于自动填充
+      final savedPassword = PasswordManager.getPassword(url);
       await _nativeWebViewChannel.invokeMethod('openMainView', {
         'url': url,
         'title': title,
         'navBarHeight': bottomNavHeight.toInt(),
         'statusBarHeight': topPadding.toInt(),
+        if (savedPassword != null) ...{
+          'savedUsername': savedPassword['username'],
+          'savedPassword': savedPassword['password'],
+        },
       });
     } catch (e) {
       debugPrint('Native WebView failed: $e');
@@ -103,6 +118,26 @@ class _WebViewPageState extends State<WebViewPage> {
       await _nativeWebViewChannel.invokeMethod('hideWebView');
     } catch (e) {
       debugPrint('hideWebView error: $e');
+    }
+  }
+
+  /// 处理来自原生 WebView 的密码保存请求
+  void _handlePasswordSave(String message) {
+    try {
+      final data = jsonDecode(message) as Map<String, dynamic>;
+      final url = data['url'] as String?;
+      final username = data['username'] as String?;
+      final password = data['password'] as String?;
+      if (url != null && username != null && password != null) {
+        PasswordManager.savePassword(
+          url: url,
+          username: username,
+          password: password,
+        );
+        debugPrint('Password saved for: $url');
+      }
+    } catch (e) {
+      debugPrint('Error saving password: $e');
     }
   }  @override
   Widget build(BuildContext context) {
@@ -229,6 +264,14 @@ class _WebViewPageState extends State<WebViewPage> {
                       ? 'http://127.0.0.1:6099/webui?token=$token'
                       : 'http://127.0.0.1:6099/webui';
                   title = 'NapCat';
+                  // 保存 NapCat Token
+                  if (token.isNotEmpty) {
+                    PasswordManager.savePassword(
+                      url: 'http://127.0.0.1:6099/webui',
+                      username: 'napcat',
+                      password: token,
+                    );
+                  }
                 } else {
                   // 自定义 WebView
                   final customIndex = index - (napCatEnabled ? 2 : 1);

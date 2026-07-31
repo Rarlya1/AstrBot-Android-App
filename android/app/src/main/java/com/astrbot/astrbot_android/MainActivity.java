@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -86,9 +87,11 @@ public class MainActivity extends FragmentActivity {
                         String title = call.argument("title");
                         Integer navH = call.argument("navBarHeight");
                         Integer statusH = call.argument("statusBarHeight");
+                        String savedUsername = call.argument("savedUsername");
+                        String savedPassword = call.argument("savedPassword");
                         if (navH != null) navBarHeightPx = navH;
                         if (statusH != null) statusBarHeightPx = statusH;
-                        showOverlayWebView(url, title);
+                        showOverlayWebView(url, title, savedUsername, savedPassword);
                         result.success(true);
                         break;
                     }
@@ -114,6 +117,15 @@ public class MainActivity extends FragmentActivity {
                     }
                     case "hideWebView": {
                         hideOverlayWebView();
+                        result.success(true);
+                        break;
+                    }
+                    case "injectJavaScript": {
+                        String script = call.argument("script");
+                        WebView wv = tabWebViews.get(activeTabTitle);
+                        if (wv != null && script != null) {
+                            wv.evaluateJavascript(script, null);
+                        }
                         result.success(true);
                         break;
                     }
@@ -154,7 +166,7 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
-    private void showOverlayWebView(String url, String title) {
+    private void showOverlayWebView(String url, String title, String savedUsername, String savedPassword) {
         FrameLayout container = findViewById(com.astrbot.astrbot_android.R.id.fl_container);
         if (container == null) return;
 
@@ -196,10 +208,13 @@ public class MainActivity extends FragmentActivity {
                 WebView.setWebContentsDebuggingEnabled(true);
 
             // WebViewClient
+            final String credsUsername = savedUsername;
+            final String credsPassword = savedPassword;
             wv.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     disableZoom(view);
+                    injectPasswordScript(view, url, credsUsername, credsPassword);
                 }
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -372,5 +387,63 @@ public class MainActivity extends FragmentActivity {
         }
         tabWebViews.clear();
         super.onDestroy();
+    }
+
+    // 注入密码管理脚本
+    private void injectPasswordScript(WebView view, String url, String savedUsername, String savedPassword) {
+        // 添加 JavaScriptInterface（仅首次）
+        if (view.getTag() == null) {
+            view.addJavascriptInterface(new PasswordJsInterface(), "Android");
+            view.setTag(new Object());
+        }
+
+        StringBuilder js = new StringBuilder();
+        js.append("(function(){");
+
+        // 自动填充已保存的密码
+        if (savedUsername != null && savedPassword != null
+                && !savedUsername.isEmpty() && !savedPassword.isEmpty()) {
+            String escUser = savedUsername.replace("'", "\\'");
+            String escPass = savedPassword.replace("'", "\\'");
+            js.append("function f(){");
+            js.append("var u=document.querySelector('input[type=text],input[type=email],input[name*=user],input[name*=account],input[id*=user],input[id*=account]');");
+            js.append("var p=document.querySelector('input[type=password]');");
+            js.append("if(u&&p){u.value='").append(escUser).append("';");
+            js.append("p.value='").append(escPass).append("';");
+            js.append("u.dispatchEvent(new Event('input',{bubbles:true}));");
+            js.append("p.dispatchEvent(new Event('input',{bubbles:true}));");
+            js.append("}}");
+            js.append("if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f);else f();");
+            js.append("setTimeout(f,500);setTimeout(f,1000);");
+        }
+
+        // 监听表单提交捕获密码
+        js.append("document.addEventListener('submit',function(e){");
+        js.append("var f=e.target;");
+        js.append("var u=f.querySelector('input[type=text],input[type=email],input[name*=user],input[name*=account]');");
+        js.append("var p=f.querySelector('input[type=password]');");
+        js.append("if(u&&p&&u.value&&p.value)");
+        js.append("Android.onSavePassword(JSON.stringify({url:location.href,username:u.value,password:p.value}));");
+        js.append("},true);");
+
+        js.append("})();");
+
+        view.evaluateJavascript(js.toString(), null);
+    }
+
+    // JavaScript 接口，接收来自网页的密码保存请求
+    class PasswordJsInterface {
+        @android.webkit.JavascriptInterface
+        public void onSavePassword(String json) {
+            // 通过 MethodChannel 发送到 Flutter 端处理
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (flutterFragment != null && flutterFragment.getFlutterEngine() != null) {
+                    new MethodChannel(
+                        flutterFragment.getFlutterEngine().getDartExecutor().getBinaryMessenger(),
+                        "astrbot_native_webview"
+                    ).invokeMethod("savePassword", json, null);
+                }
+            });
+        }
     }
 }
