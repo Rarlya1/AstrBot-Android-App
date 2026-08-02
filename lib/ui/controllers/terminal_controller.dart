@@ -341,7 +341,7 @@ class HomeController extends GetxController {
       // 检测指令1显示二维码
       if (event.contains('二维码已保存到') && !_isQrcodeShowing.value) {
         _isQrcodeShowing.value = true;
-        final qrcodePath = '$ubuntuPath/root/napcat/cache/qrcode.png';
+        final qrcodePath = '$ubuntuPath/root/Napcat/napcat/cache/qrcode.png';
         final qrcodeFile = File(qrcodePath);
 
         if (await qrcodeFile.exists()) {
