@@ -216,8 +216,8 @@ class HomeController extends GetxController {
   void _processColoredOutput(String event) {
     _pendingOutput += event;
 
-    // 检查设置：如果允许显示白色文本，则显示所有内容
-    if (showTerminalWhiteText.get() == true) {
+    // 检查设置：如果允许显示白色文本（未设置时默认允许），则显示所有内容
+    if (showTerminalWhiteText.get() != false) {
       _writeWithTrim(terminal, event);
       return;
     }
@@ -665,8 +665,8 @@ class HomeController extends GetxController {
     // 初始化 NapCat WebUI 启用状态
     napCatWebUiEnabledRx.value = napCatWebUiEnabled.get() ?? false;
 
-    // 初始化显示终端白色文本状态
-    showTerminalWhiteTextRx.value = showTerminalWhiteText.get() ?? false;
+    // 初始化显示终端白色文本状态（默认打开）
+    showTerminalWhiteTextRx.value = showTerminalWhiteText.get() != false;
 
     // 从持久化存储加载自定义 WebView 列表
     _loadCustomWebViews();

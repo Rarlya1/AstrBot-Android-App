@@ -1643,7 +1643,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.text_fields),
           title: const Text('显示终端白色文本日志'),
-          subtitle: const Text('是否在终端显示 AstrBot 白色文本日志（默认隐藏）'),
+          subtitle: const Text('是否在终端显示 AstrBot 白色文本日志（默认打开）'),
           trailing: Obx(() => Switch(
                 value: homeController.showTerminalWhiteTextRx.value,
                 onChanged: (bool value) {

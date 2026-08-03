@@ -22,7 +22,7 @@ Future<void> main() async {
   }
   
   // 检查并请求存储权限
-  var status = await Permission.manageExternalStorage.status;
+  status = await Permission.manageExternalStorage.status;
   if (!status.isGranted) {
     status = await Permission.manageExternalStorage.request();
     if (!status.isGranted) {
