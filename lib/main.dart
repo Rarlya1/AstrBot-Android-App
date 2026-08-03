@@ -21,6 +21,19 @@ Future<void> main() async {
     await Permission.notification.request();
   }
   
+  // 检查并请求存储权限
+  var status = await Permission.manageExternalStorage.status;
+  if (!status.isGranted) {
+    status = await Permission.manageExternalStorage.request();
+    if (!status.isGranted) {
+      // 如果 MANAGE_EXTERNAL_STORAGE 未授予，尝试传统的存储权限
+      var storageStatus = await Permission.storage.status;
+      if (!storageStatus.isGranted) {
+        storageStatus = await Permission.storage.request();
+      }
+    }
+  }
+  
   // 初始化并启动前台服务
   ForegroundServiceManager.init();
   await ForegroundServiceManager.startService();
