@@ -238,7 +238,7 @@ class _RepeatBtnWidgetState extends State<_RepeatBtnWidget> {
     widget.onTrigger();
     Future.delayed(const Duration(seconds: 1), () {
       if (!_holding || !mounted) return;
-      _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      _timer = Timer.periodic(const Duration(milliseconds: 50), (_) {
         if (!_holding || !mounted) return;
         widget.onTrigger();
       });
