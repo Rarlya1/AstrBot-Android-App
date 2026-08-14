@@ -5,9 +5,18 @@ on:
     branches: [master, fork]
   workflow_dispatch:
 
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   build:
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         flavor:
           - suffix: ''
@@ -15,9 +24,12 @@ jobs:
           - suffix: '.clone'
             apk_name: 'AstrBot_1.5.3fix.clone'
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -30,7 +42,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
-          channel: 'stable'
           cache: true
 
       - name: Prepare NDK and CMake directories
@@ -46,9 +57,9 @@ jobs:
           path: |
             /usr/local/lib/android/sdk/ndk
             /usr/local/lib/android/sdk/cmake
-          key: ${{ runner.os }}-android-ndk-cmake-${{ hashFiles('android/app/build.gradle') }}
+          key: ${{ runner.os }}-flutter-3.35.7-android-tools-${{ hashFiles('android/app/build.gradle', 'android/settings.gradle') }}
           restore-keys: |
-            ${{ runner.os }}-android-ndk-cmake-
+            ${{ runner.os }}-flutter-3.35.7-android-tools-
 
       - name: Rename package for clone build
         if: matrix.flavor.suffix != ''
@@ -64,7 +75,7 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --no-pub
 
       - name: Rename APK
         run: |
@@ -76,3 +87,5 @@ jobs:
         with:
           name: ${{ matrix.flavor.apk_name }}
           path: build/app/outputs/flutter-apk/${{ matrix.flavor.apk_name }}.apk
+          compression-level: 0
+          if-no-files-found: error

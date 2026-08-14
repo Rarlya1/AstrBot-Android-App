@@ -414,7 +414,7 @@ String loginUbuntu = r'''
 login_ubuntu(){
   COMMAND_TO_EXEC="$1"
   if [ -z "$COMMAND_TO_EXEC" ]; then
-    COMMAND_TO_EXEC="/bin/bash -il"
+    COMMAND_TO_EXEC="exec bash -il"
   fi
 
   # Setup fake sysdata to fix Android system information retrieval errors
@@ -569,7 +569,7 @@ start_astrbot(){
   bump_progress
 
   copy_files
-  login_ubuntu "export TMPDIR='${RuntimeEnvir.tmpPath}'; export L_NOT_INSTALLED='${S.current.uninstalled}'; export L_INSTALLING='${S.current.installing}'; export L_INSTALLED='${S.current.installed}'; chmod +x /root/astrbot-startup.sh; bash /root/astrbot-startup.sh"
+  login_ubuntu "export TMPDIR='${RuntimeEnvir.tmpPath}'; export L_NOT_INSTALLED='${S.current.uninstalled}'; export L_INSTALLING='${S.current.installing}'; export L_INSTALLED='${S.current.installed}'; chmod +x /root/astrbot-startup.sh; exec bash /root/astrbot-startup.sh"
 }
 ''';
 }

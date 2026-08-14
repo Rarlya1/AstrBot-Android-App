@@ -285,7 +285,7 @@ class HomeController extends GetxController {
       }
 
       // proot 中不能依赖 AstrBot 的进程替换式重启；WebUI 关闭后由外层 PTY重新执行启动脚本
-      if (event.contains('AstrBot WebUI 已经被关闭')) {
+      if (event.contains('Terminating 0 child processes')) {
         Log.i('检测到 AstrBot WebUI 已关闭，重新启动 AstrBot...', tag: 'AstrBot');
         pseudoTerminal?.writeString(
       'source ${RuntimeEnvir.homePath}/common.sh\nstart_astrbot\n');
@@ -293,7 +293,7 @@ class HomeController extends GetxController {
 
       // 只在 AstrBot 配置阶段，并且显示终端白色文本（未设置时默认开启）为关闭时才过滤非彩色输出
       // Only filter non‑colored output after AstrBot configuration starts when showTerminalWhiteText is disabled.
-      if (_isAstrBotConfiguring && showTerminalWhiteText.get() != true){
+      if (_isAstrBotConfiguring && showTerminalWhiteText.get() != true) {
         // 使用新的彩色输出处理逻辑,支持多行彩色输出
         _processColoredOutput(event);
       } else {
@@ -529,7 +529,7 @@ class HomeController extends GetxController {
 
         // 当进度到达 "Napcat 已安装" 时，启动 NapCat 终端
         if (content.contains('Napcat ${S.current.installed}')) {
-          napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "cd /root/Napcat; bash ./launcher.sh"\n');
+          napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "cd /root/Napcat; exec bash launcher.sh"\n');
           bumpProgress();
           Log.i('检测到 Napcat 已安装，启动 NapCat 终端', tag: 'AstrBot');
         }
