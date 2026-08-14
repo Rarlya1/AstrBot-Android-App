@@ -30,6 +30,7 @@ class HomeController extends GetxController {
 
   final RxString napCatWebUiToken = ''.obs; // 存储 NapCat WebUI Token
   final RxBool _isQrcodeShowing = false.obs;
+  int _qrcodeDialogGeneration = 0; //二维码弹窗标记
   final RxBool napCatWebUiEnabledRx = false.obs; // GetX 响应式变量用于导航栏更新
   final RxBool showTerminalWhiteTextRx = false.obs; // GetX 响应式变量用于设置页更新
   final RxList<Map<String, String>> customWebViews =
@@ -216,12 +217,6 @@ class HomeController extends GetxController {
   void _processColoredOutput(String event) {
     _pendingOutput += event;
 
-    // 检查设置：如果允许显示白色文本（未设置时默认允许），则显示所有内容
-    if (showTerminalWhiteText.get() != false) {
-      _writeWithTrim(terminal, event);
-      return;
-    }
-
     // 检查是否包含彩色代码和重置代码
     final isPurelyColored = _isPurelyColoredOutput(_pendingOutput);
     final hasReset = _hasResetCode(_pendingOutput);
@@ -289,9 +284,16 @@ class HomeController extends GetxController {
         // 不取消订阅，继续监听以便终端日志持续更新
       }
 
-      // 只在 AstrBot 配置阶段才过滤非彩色输出
-      // Only filter non-colored output after AstrBot configuration starts
-      if (_isAstrBotConfiguring) {
+      // proot 中不能依赖 AstrBot 的进程替换式重启；WebUI 关闭后由外层 PTY重新执行启动脚本
+      if (event.contains('AstrBot WebUI 已经被关闭')) {
+        Log.i('检测到 AstrBot WebUI 已关闭，重新启动 AstrBot...', tag: 'AstrBot');
+        pseudoTerminal?.writeString(
+      'source ${RuntimeEnvir.homePath}/common.sh\nstart_astrbot\n');
+      }
+
+      // 只在 AstrBot 配置阶段，并且显示终端白色文本（未设置时默认开启）为关闭时才过滤非彩色输出
+      // Only filter non‑colored output after AstrBot configuration starts when showTerminalWhiteText is disabled.
+      if (_isAstrBotConfiguring && showTerminalWhiteText.get() != true){
         // 使用新的彩色输出处理逻辑,支持多行彩色输出
         _processColoredOutput(event);
       } else {
@@ -308,12 +310,6 @@ class HomeController extends GetxController {
         .cast<List<int>>()
         .transform(const Utf8Decoder(allowMalformed: true))
         .listen((event) async {
-      // 先判断订阅是否已取消，避免重复处理
-      if (_qrcodeSubscription == null) return;
-
-      // 写入 NapCat 终端视图
-      _writeWithTrim(napcatTerminalView, event);
-
       // 输出到 Flutter 控制台
       // Output to Flutter console
       if (event.trim().isNotEmpty) {
@@ -341,10 +337,15 @@ class HomeController extends GetxController {
       // 检测指令1显示二维码
       if (event.contains('二维码已保存到') && !_isQrcodeShowing.value) {
         _isQrcodeShowing.value = true;
+        final dialogGeneration = ++_qrcodeDialogGeneration;
         final qrcodePath = '$ubuntuPath/root/Napcat/napcat/cache/qrcode.png';
         final qrcodeFile = File(qrcodePath);
 
         if (await qrcodeFile.exists()) {
+          // 二维码文件路径固定为 qrcode.png，直接使用 Image.file 可能命中Flutter ImageCache，因此先读取当前文件内容再用 Image.memory 展示
+          final qrcodeBytes = await qrcodeFile.readAsBytes();
+          if (dialogGeneration != _qrcodeDialogGeneration) return;
+
           _qrcodeDialog = Dialog(
             backgroundColor: Colors.white,
             child: Padding(
@@ -357,8 +358,9 @@ class HomeController extends GetxController {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  Image.file(
-                    qrcodeFile,
+                  Image.memory(
+                    qrcodeBytes,
+                    key: ValueKey(dialogGeneration),
                     width: 200,
                     height: 200,
                     fit: BoxFit.contain,
@@ -374,8 +376,11 @@ class HomeController extends GetxController {
             barrierDismissible: false,
           );
 
-          _isQrcodeShowing.value = false;
-          _qrcodeDialog = null;
+          // 只有当前弹窗状态未更新时，才允许清理状态
+          if (dialogGeneration == _qrcodeDialogGeneration) {
+            _isQrcodeShowing.value = false;
+            _qrcodeDialog = null;
+          }
         } else {
           Get.showSnackbar(GetSnackBar(
             message: '二维码图片不存在：$qrcodePath',
@@ -400,9 +405,7 @@ class HomeController extends GetxController {
         // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
 
-        // 取消订阅，后续不再监听任何指令
-        // await _qrcodeSubscription?.cancel();
-        // _qrcodeSubscription = null; // 置空标记已取消
+        // 不取消订阅，继续监听以便终端日志持续更新
       }
 
       // 检测指令3napcat启动完成（快速登录无二维码）
@@ -414,13 +417,13 @@ class HomeController extends GetxController {
         // 检查是否两个条件都满足
         _checkAndNavigateToWebview();
 
-        // 取消订阅，后续不再监听任何指令
-        // await _qrcodeSubscription?.cancel();
-        // _qrcodeSubscription = null; // 置空标记已取消
+        // 不取消订阅，继续监听以便终端日志持续更新
       }
 
       // 检测指令4处理登录错误
       if (event.contains('Login Error') && _isQrcodeShowing.value) {
+        // 使当前二维码弹窗失效，避免 await Get.dialog 返回后覆盖下一张二维码
+        _qrcodeDialogGeneration++;
         // 关闭二维码对话框
         if (_qrcodeDialog != null) {
           Get.back();
@@ -449,6 +452,10 @@ class HomeController extends GetxController {
 
         // 不取消订阅，允许用户重新扫码
       }
+
+      // 写入 NapCat 终端视图
+      _writeWithTrim(napcatTerminalView, event);
+
     });
   }
 
