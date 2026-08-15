@@ -438,6 +438,9 @@ install_astrbot() {
   cd "$INSTALL_DIR"
   progress_echo "AstrBot 配置中"
 
+  # 修复proot重启
+  $INSTALL_DIR/.venv/bin/python -c "import sys; sys.path.append('/root'); from proot import proot_fix; proot_fix()" >/dev/null 2>&1
+
  # 使用exec替换bash，并直接使用虚拟环境中的python直接启动astrbot
   exec $INSTALL_DIR/.venv/bin/python main.py
 

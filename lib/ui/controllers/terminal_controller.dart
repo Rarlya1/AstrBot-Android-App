@@ -30,7 +30,7 @@ class HomeController extends GetxController {
 
   final RxString napCatWebUiToken = ''.obs; // 存储 NapCat WebUI Token
   final RxBool _isQrcodeShowing = false.obs;
-  int _qrcodeDialogGeneration = 0; //二维码弹窗标记
+  int _qrcodeDialogGeneration = 0; // 二维码弹窗标记
   final RxBool napCatWebUiEnabledRx = false.obs; // GetX 响应式变量用于导航栏更新
   final RxBool showTerminalWhiteTextRx = false.obs; // GetX 响应式变量用于设置页更新
   final RxList<Map<String, String>> customWebViews =
@@ -282,14 +282,6 @@ class HomeController extends GetxController {
         });
 
         // 不取消订阅，继续监听以便终端日志持续更新
-      }
-
-      // proot 中不能依赖 AstrBot 的进程替换式重启；WebUI 关闭后由外层 PTY 抢先杀死 AstrBot ，再重新执行启动脚本
-      if (event.contains('AstrBot WebUI 已经被关闭')) {
-        Log.i('检测到 AstrBot WebUI 已关闭，重新启动 AstrBot...', tag: 'AstrBot');
-        await Process.run('pkill', ['-f', '/root/AstrBot/.venv/bin/python main.py']);
-        pseudoTerminal?.writeString(
-      'source ${RuntimeEnvir.homePath}/common.sh\nstart_astrbot\n');
       }
 
       // 只在 AstrBot 配置阶段，并且显示终端白色文本（未设置时默认开启）为关闭时才过滤非彩色输出
@@ -632,6 +624,8 @@ class HomeController extends GetxController {
         '${RuntimeEnvir.homePath}/astrbot-startup.sh');
     await AssetsUtils.copyAssetToPath(
         'assets/cmd_config.json', '${RuntimeEnvir.homePath}/cmd_config.json');
+    await AssetsUtils.copyAssetToPath(
+        'assets/proot.py', '${RuntimeEnvir.homePath}/proot.py');
     bumpProgress();
 
     // 获取当前应用版本号

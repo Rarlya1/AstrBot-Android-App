@@ -546,7 +546,8 @@ copy_files(){
   fi
 
   # cmd_config.json 每次都复制（保持原有逻辑）
-  cp ~/cmd_config.json "\$UBUNTU_PATH/root/cmd_config.json"
+  cp -f ~/cmd_config.json "\$UBUNTU_PATH/root/cmd_config.json"
+  cp -f ~/proot.py "\$UBUNTU_PATH/root/proot.py"
 }
 ''';
 }
