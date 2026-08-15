@@ -284,9 +284,10 @@ class HomeController extends GetxController {
         // 不取消订阅，继续监听以便终端日志持续更新
       }
 
-      // proot 中不能依赖 AstrBot 的进程替换式重启；WebUI 关闭后由外层 PTY重新执行启动脚本
-      if (event.contains('Terminating 0 child processes')) {
+      // proot 中不能依赖 AstrBot 的进程替换式重启；WebUI 关闭后由外层 PTY 抢先杀死 AstrBot ，再重新执行启动脚本
+      if (event.contains('AstrBot WebUI 已经被关闭')) {
         Log.i('检测到 AstrBot WebUI 已关闭，重新启动 AstrBot...', tag: 'AstrBot');
+        await Process.run('pkill', ['-f', '/root/AstrBot/.venv/bin/python main.py']);
         pseudoTerminal?.writeString(
       'source ${RuntimeEnvir.homePath}/common.sh\nstart_astrbot\n');
       }
