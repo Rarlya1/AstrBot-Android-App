@@ -153,7 +153,7 @@ class TerminalTabManager extends GetxController {
 
       // 登录到ubuntu容器
       final command =
-          'source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "bash" \n';
+          'source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "exec bash -il" \n';
       newPty.writeString(command);
     } catch (e) {
       Log.e('添加系统终端标签页失败: $e', tag: 'TerminalTabManager');
@@ -178,6 +178,22 @@ class TerminalTabManager extends GetxController {
     }
   }
 
+  Future<void> _killPtySession(Pty pty) async {
+    try {
+      final result = await Process.run(
+        'pkill',
+        ['-KILL', '-s', '${pty.pid}', '.*'],
+      );
+      if (result.exitCode == 0) return;
+
+      Log.e('按会话清理PTY失败: ${result.stderr}', tag: 'TerminalTabManager');
+    } catch (e) {
+      Log.e('按会话清理PTY失败: $e', tag: 'TerminalTabManager');
+    }
+
+    pty.kill(ProcessSignal.sigkill);
+  }
+
   /// 关闭指定标签页
   void closeTab(int index) {
     if (index < 0 || index >= tabs.length) {
@@ -195,8 +211,8 @@ class TerminalTabManager extends GetxController {
     try {
       // 关闭PTY
       if (tab.pty != null) {
-        tab.pty!.kill(ProcessSignal.sigkill);
-        Log.i('关闭终端PTY: ${tab.title}', tag: 'TerminalTabManager');
+        _killPtySession(tab.pty!);
+        Log.i('关闭终端PTY会话: ${tab.title}', tag: 'TerminalTabManager');
       }
 
       // 移除标签页
@@ -233,8 +249,8 @@ class TerminalTabManager extends GetxController {
     for (var tab in tabs) {
       if (tab.type == TerminalTabType.system && tab.pty != null) {
         try {
-          tab.pty!.kill(ProcessSignal.sigkill);
-          Log.i('清理终端PTY: ${tab.title}', tag: 'TerminalTabManager');
+          _killPtySession(tab.pty!);
+          Log.i('清理终端PTY会话: ${tab.title}', tag: 'TerminalTabManager');
         } catch (e) {
           Log.e('清理终端PTY失败: $e', tag: 'TerminalTabManager');
         }

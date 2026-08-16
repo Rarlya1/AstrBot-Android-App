@@ -272,10 +272,17 @@ EOF
   if [ -f "$HOME/Napcat/napcat/napcat.mjs" ]; then
     sed -i 's/MAX_CREDENTIAL_VALID_SECONDS = [0-9]*/MAX_CREDENTIAL_VALID_SECONDS = 604800/' "$HOME/Napcat/napcat/napcat.mjs"
   fi
+
   # 清理napcat残留进程标识
   if [ -f "/tmp/.X1-lock" ]; then
     sudo rm -f "/tmp/.X1-lock"
   fi
+
+  # 设置napcat使用exec
+  if ! grep -q "exec env LD_PRELOAD" "$HOME/Napcat/launcher.sh"; then
+    sed -i 's/LD_PRELOAD/exec env LD_PRELOAD/' "$HOME/Napcat/launcher.sh"
+  fi
+
   progress_echo "Napcat $L_INSTALLED"
 }
 
@@ -429,19 +436,13 @@ install_astrbot() {
 
   # 启动 AstrBot（失败直接退出）
   cd "$INSTALL_DIR"
-  if [ ! -f "$HOME/.local/bin/uv" ]; then
-    echo "uv 未找到"
-    exit 1
-  fi
-
-  # 使用 uv run --no-sync main.py 启动（跳过依赖同步）
   progress_echo "AstrBot 配置中"
 
-  ( sleep 5; pkill "bash" ) &
-  if ! $HOME/.local/bin/uv run --no-sync main.py; then
-    echo "AstrBot 启动失败"
-    exit 1
-  fi
+  # 修复proot重启
+  $INSTALL_DIR/.venv/bin/python -c "import sys; sys.path.append('/root'); from proot import proot_fix; proot_fix()" >/dev/null 2>&1
+
+ # 使用exec替换bash，并直接使用虚拟环境中的python直接启动astrbot
+  exec $INSTALL_DIR/.venv/bin/python main.py
 
 }
 
