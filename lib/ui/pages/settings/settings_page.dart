@@ -159,7 +159,9 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
 
-      Get.back(); // 关闭加载提示
+      if Get.isDialogOpen) {
+        Get.back(); // 关闭加载提示
+      }
 
       if (releaseData == null) {
         Get.snackbar(
@@ -190,7 +192,9 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     } catch (e) {
-      Get.back(); // 关闭加载提示
+      if Get.isDialogOpen) {
+        Get.back(); // 关闭加载提示
+      }
       Log.e('检查更新失败: $e', tag: 'AstrBot');
       Get.snackbar(
         '检查失败',
@@ -1434,7 +1438,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.refresh),
           title: const Text('重置 Python 环境'),
-          subtitle: const Text('删除虚拟环境并重启应用，启动时将自动重建'),
+          subtitle: const Text('删除 AstrBot 虚拟环境并重启应用，启动时将自动重建'),
           onTap: () async {
             // 显示确认对话框
             final confirmed = await Get.dialog<bool>(
