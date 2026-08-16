@@ -41,8 +41,8 @@ class _WebViewPageState extends State<WebViewPage> {
       }
     });
     // 监听 NapCat 就绪后关闭旧 WebView，切回时会重新打开
-    _napcatReadySub = homeController.isQrcodeProcessed.listen((ready) {
-      if (ready) {
+    _napcatReadySub = homeController.napCatWebUiToken.listen((token) {
+      if (token.isNotEmpty) {
         _nativeWebViewChannel.invokeMethod('closeWebView', 'NapCat');
       }
     });

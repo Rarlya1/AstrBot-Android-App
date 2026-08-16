@@ -158,7 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
 
-      if (Get.isDialogOpen) {
+      if (Get.isDialogOpen == true) {
         Get.back(); // 关闭加载提示
       }
 
@@ -191,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     } catch (e) {
-      if (Get.isDialogOpen) {
+      if (Get.isDialogOpen == true) {
         Get.back(); // 关闭加载提示
       }
       Log.e('检查更新失败: $e', tag: 'AstrBot');
