@@ -11,7 +11,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter/services.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../../core/constants/scripts.dart' as scripts;
-import '../../../core/services/password_manager.dart';
 import '../../../core/config/app_config.dart';
 
 /// 原生 WebView 通道
@@ -159,7 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
 
-      if Get.isDialogOpen) {
+      if (Get.isDialogOpen) {
         Get.back(); // 关闭加载提示
       }
 
@@ -192,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     } catch (e) {
-      if Get.isDialogOpen) {
+      if (Get.isDialogOpen) {
         Get.back(); // 关闭加载提示
       }
       Log.e('检查更新失败: $e', tag: 'AstrBot');
@@ -1674,15 +1673,14 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.delete_outline),
           title: const Text('清空 WebView 缓存'),
-          subtitle: const Text('清理所有 WebView 缓存和密码'),
+          subtitle: const Text('清理所有 WebView 缓存'),
           onTap: () async {
             try {
               await _nativeWebViewChannel.invokeMethod('clearCache');
-              await PasswordManager.clearAllPasswords();
               if (context.mounted) {
                 Get.snackbar(
                   '成功',
-                  'WebView 缓存和密码已清理',
+                  'WebView 缓存已清理',
                   snackPosition: SnackPosition.BOTTOM,
                 );
               }
