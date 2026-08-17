@@ -8,15 +8,15 @@
 
 - 本应用（AstrBot-Android-App）是完全免费的开源项目，**从未授权任何个人或平台进行收费分发**
 - 如您通过付费渠道获取本应用，请立即向相关平台举报并联系我们
-- 官方获取渠道：[GitHub项目页面](https://github.com/zz6zz666/AstrBot-Android-App)
+- 官方获取渠道：[GitHub项目页面](https://github.com/Rarlya1/AstrBot-Android-App)
 
 ## 导言
 
-_AstrBot-Android-App_ 是由「zz6zz666」与「AAswordman」（以下简称"我们"）合作开发的开源产品。本《隐私政策》旨在向您说明我们如何收集、使用、存储、共享与保护您的信息，以及您如何行使相关权利。请您在使用前仔细阅读并充分理解本政策的全部内容。
+_AstrBot-Android-App_ 是由「zz6zz666」与「AAswordman」（以下简称"我们"）合作开发的开源产品。并由「Rarlya」独立更新和维护此版本后续开发。本《隐私政策》旨在向您说明我们如何收集、使用、存储、共享与保护您的信息，以及您如何行使相关权利。请您在使用前仔细阅读并充分理解本政策的全部内容。
 
 您使用或继续使用我们的服务，即表示您已阅读并同意本《隐私政策》。如对本政策有任何疑问，您可通过以下方式与我们联系：
-- 邮箱：**zz6zz666@qq.com**
-- GitHub：**https://github.com/zz6zz666**
+- 邮箱：**3148438955@qq.com**
+- GitHub：**https://github.com/Rarlya1/AstrBot-Android-App**
 
 ## 1. 适用范围
 
@@ -123,8 +123,8 @@ _AstrBot-Android-App_ 是由「zz6zz666」与「AAswordman」（以下简称"我
 ## 12. 联系我们
 
 如对本《隐私政策》或个人信息保护事宜有任何问题、意见或建议，请通过以下方式联系：
-- 邮箱：**zz6zz666@qq.com**
-- GitHub：**https://github.com/zz6zz666**
+- 邮箱：**3148438955@qq.com**
+- GitHub：**https://github.com/Rarlya1/AstrBot-Android-App**
 
 我们将尽快审核并在不超过15个工作日内回复。
 
