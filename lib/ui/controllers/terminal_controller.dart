@@ -281,7 +281,7 @@ class HomeController extends GetxController {
 
       // 只在 AstrBot 配置阶段，并且显示终端白色文本（未设置时默认开启）为关闭时才过滤非彩色输出
       // Only filter non‑colored output after AstrBot configuration starts when showTerminalWhiteText is disabled.
-      if (_isAstrBotConfiguring && showTerminalWhiteText.get() != true) {
+      if (_isAstrBotConfiguring && showTerminalWhiteText.get() == false) {
         // 使用新的彩色输出处理逻辑,支持多行彩色输出
         _processColoredOutput(event);
       } else {
@@ -557,7 +557,7 @@ class HomeController extends GetxController {
     napCatWebUiEnabledRx.value = napCatWebUiEnabled.get() ?? false;
 
     // 初始化显示终端白色文本状态（默认打开）
-    showTerminalWhiteTextRx.value = showTerminalWhiteText.get() != false;
+    showTerminalWhiteTextRx.value = showTerminalWhiteText.get() ?? true;
 
     // 从持久化存储加载自定义 WebView 列表
     _loadCustomWebViews();
