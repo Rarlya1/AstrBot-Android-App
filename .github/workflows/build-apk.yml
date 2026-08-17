@@ -65,6 +65,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Read app version
+        run: |
+          VERSION=$(sed -n 's/^version: *\([^+]*\)+.*/\1/p' pubspec.yaml)
+          test -n "$VERSION" || { echo 'Unable to read app version'; exit 1; }
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v$VERSION" >> "$GITHUB_ENV"
+
       - name: Configure release signing
         env:
           SECRETS_PK8_BASE64: ${{ secrets.SECRETS_PK8_BASE64 }}
@@ -95,13 +102,13 @@ jobs:
       - name: Rename APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/AstrBot.apk
+             "build/app/outputs/flutter-apk/AstrBot-v${RELEASE_VERSION}.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AstrBot
-          path: build/app/outputs/flutter-apk/AstrBot.apk
+          name: AstrBot-v${{ env.RELEASE_VERSION }}
+          path: build/app/outputs/flutter-apk/AstrBot-v${{ env.RELEASE_VERSION }}.apk
           compression-level: 0
           if-no-files-found: error
 
@@ -110,20 +117,39 @@ jobs:
           github.event_name == 'pull_request' &&
           github.event.pull_request.merged == true
         run: |
-          VERSION=$(sed -n 's/^version: *\([^+]*\)+.*/\1/p' pubspec.yaml)
-          TAG="v${VERSION}"
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
-          {
-            printf '更新内容\n\n'
-            if [ -n "$PREVIOUS_TAG" ]; then
-              git log --pretty=format:'- %s (%h)' "${PREVIOUS_TAG}..HEAD"
+          if [ -n "$PREVIOUS_TAG" ]; then
+            LOG_RANGE="${PREVIOUS_TAG}..HEAD"
+          else
+            LOG_RANGE=HEAD
+          fi
+
+          NOTES_DIR=$(mktemp -d)
+          trap 'rm -rf "$NOTES_DIR"' EXIT
+          for CATEGORY in 新增 优化 修复 更新 修改 移除 其他; do
+            : > "$NOTES_DIR/$CATEGORY"
+          done
+
+          while IFS= read -r SUBJECT; do
+            [[ "$SUBJECT" == Merge\ pull\ request\ * ]] && continue
+            if [[ "$SUBJECT" =~ ^(新增|优化|修复|更新|修改|移除|其他)[[:space:]]+(.+)$ ]]; then
+              CATEGORY="${BASH_REMATCH[1]}"
+              CONTENT="${BASH_REMATCH[2]}"
             else
-              git log --pretty=format:'- %s (%h)' HEAD
+              CATEGORY=其他
+              CONTENT="$SUBJECT"
             fi
-            printf '\n'
-          } > release-notes.md
-          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
-          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+            printf '%s\n' "- $CONTENT" >> "$NOTES_DIR/$CATEGORY"
+          done < <(git log --pretty=format:'%s' "$LOG_RANGE")
+
+          : > release-notes.md
+          for CATEGORY in 新增 优化 修复 更新 修改 移除 其他; do
+            if [ -s "$NOTES_DIR/$CATEGORY" ]; then
+              printf '%s\n' "$CATEGORY" >> release-notes.md
+              cat "$NOTES_DIR/$CATEGORY" >> release-notes.md
+              printf '\n' >> release-notes.md
+            fi
+          done
 
       - name: Publish GitHub Release
         if: >-
@@ -137,12 +163,12 @@ jobs:
               --title "AstrBot $RELEASE_VERSION" \
               --notes-file release-notes.md
             gh release upload "$RELEASE_TAG" \
-              build/app/outputs/flutter-apk/AstrBot.apk \
+              "build/app/outputs/flutter-apk/AstrBot-v${RELEASE_VERSION}.apk" \
               --clobber
           else
             gh release create "$RELEASE_TAG" \
               --target "$GITHUB_SHA" \
               --title "AstrBot $RELEASE_VERSION" \
               --notes-file release-notes.md \
-              build/app/outputs/flutter-apk/AstrBot.apk
+              "build/app/outputs/flutter-apk/AstrBot-v${RELEASE_VERSION}.apk"
           fi
