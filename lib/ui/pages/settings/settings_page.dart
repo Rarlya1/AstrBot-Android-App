@@ -410,14 +410,14 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 显示添加自定义 WebView 对话框
-  void _showAddWebViewDialog() {
+  // 显示添加自定义 WebUI 对话框
+  void _showAddWebUIDialog() {
     final titleController = TextEditingController();
     final urlController = TextEditingController();
 
     Get.dialog(
       AlertDialog(
-        title: const Text('添加自定义 WebView'),
+        title: const Text('添加自定义 WebUI'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -446,13 +446,23 @@ class _SettingsPageState extends State<SettingsPage> {
           TextButton(onPressed: () => Get.back(), child: const Text('取消')),
           TextButton(
             onPressed: () {
-              final title = titleController.text.trim();
+              var title = titleController.text.trim();
               var url = urlController.text.trim();
 
-              if (title.isEmpty || url.isEmpty) {
+              // 如果标题为空就使用 WebUI + 序号作为标题
+              if (title.isEmpty) {
+                title = 'WebUI 1';
+                int counter = 2;
+                while (homeController.customWebViews.any((wv) => (wv['title'] ?? '') == title)) {
+                  title = 'WebUI $counter';
+                  counter++;
+                }
+              }
+
+              if (url.isEmpty) {
                 Get.snackbar(
                   '输入错误',
-                  '标题和 URL 不能为空',
+                  'URL 不能为空',
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: Colors.orange,
                   colorText: Colors.white,
@@ -466,8 +476,7 @@ class _SettingsPageState extends State<SettingsPage> {
               }
 
               // 检查标题是否已存在
-              final bool exists = homeController.customWebViews.any((wv) =>
-                  (wv['title'] ?? '') == title);
+              final bool exists = homeController.customWebViews.any((wv) => (wv['title'] ?? '') == title);
               if (exists) {
                 Get.snackbar(
                   '添加失败',
@@ -484,7 +493,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
               Get.snackbar(
                 '添加成功',
-                '自定义 WebView "$title" 已添加',
+                '自定义 WebUI "$title" 已添加',
                 snackPosition: SnackPosition.BOTTOM,
                 duration: const Duration(seconds: 2),
               );
@@ -496,8 +505,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 显示编辑自定义 WebView 对话框
-  void _showEditWebViewDialog(int index, Map<String, String> webview) {
+  // 显示编辑自定义 WebUI 对话框
+  void _showEditWebUIDialog(int index, Map<String, String> webview) {
     final titleController = TextEditingController(text: webview['title']);
 
     // 将完整URL转换为简化格式用于编辑
@@ -512,7 +521,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('编辑自定义 WebView'),
+        title: const Text('编辑自定义 WebUI'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -580,7 +589,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
               Get.snackbar(
                 '更新成功',
-                '自定义 WebView 已更新',
+                '自定义 WebUI 已更新',
                 snackPosition: SnackPosition.BOTTOM,
                 duration: const Duration(seconds: 2),
               );
@@ -592,12 +601,12 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 确认删除自定义 WebView
-  void _confirmDeleteWebView(int index, String title) {
+  // 确认删除自定义 WebUI
+  void _confirmDeleteWebUI(int index, String title) {
     Get.dialog(
       AlertDialog(
         title: const Text('确认删除'),
-        content: Text('确定要删除自定义 WebView "$title" 吗？'),
+        content: Text('确定要删除自定义 WebUI "$title" 吗？'),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('取消')),
           TextButton(
@@ -607,7 +616,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
               Get.snackbar(
                 '删除成功',
-                '自定义 WebView "$title" 已删除',
+                '自定义 WebUI "$title" 已删除',
                 snackPosition: SnackPosition.BOTTOM,
                 duration: const Duration(seconds: 2),
               );
@@ -1514,7 +1523,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Row(
             children: [
               const Text(
-                '自定义 WebView',
+                '自定义 WebUI',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -1524,8 +1533,8 @@ class _SettingsPageState extends State<SettingsPage> {
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
-                onPressed: _showAddWebViewDialog,
-                tooltip: '添加自定义 WebView',
+                onPressed: _showAddWebUIDialog,
+                tooltip: '添加自定义 WebUI',
               ),
             ],
           ),
@@ -1556,7 +1565,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit, size: 20),
-                      onPressed: () => _showEditWebViewDialog(index, webview),
+                      onPressed: () => _showEditWebUIDialog(index, webview),
                       tooltip: '编辑',
                     ),
                     IconButton(
@@ -1565,7 +1574,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         size: 20,
                         color: Colors.red,
                       ),
-                      onPressed: () => _confirmDeleteWebView(
+                      onPressed: () => _confirmDeleteWebUI(
                         index,
                         webview['title'] ?? 'WebUI',
                       ),
