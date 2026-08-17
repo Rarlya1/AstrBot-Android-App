@@ -65,7 +65,7 @@ class _TerminalPageState extends State<TerminalPage> {
                     child: TerminalView(
                       controller.terminal,
                       controller: terminalController,
-                      readOnly: false,
+                      readOnly: true,
                       backgroundOpacity: 1,
                       theme: ManjaroTerminalTheme(),
                     ),

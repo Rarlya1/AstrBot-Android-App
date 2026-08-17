@@ -299,6 +299,7 @@ class TerminalViewState extends State<TerminalView> {
       terminalView: this,
       terminalController: _controller,
       onTapUp: _onTapUp,
+      onSingleTapUp: _onSingleTapUp,
       onTapDown: _onTapDown,
       onSecondaryTapDown: widget.onSecondaryTapDown != null ? _onSecondaryTapDown : null,
       onSecondaryTapUp: widget.onSecondaryTapUp != null ? _onSecondaryTapUp : null,
@@ -341,15 +342,17 @@ class TerminalViewState extends State<TerminalView> {
     widget.onTapUp?.call(details, offset);
   }
 
+  void _onSingleTapUp(TapUpDetails details) {
+    if (!widget.readOnly && _controller.selection == null) {
+      _customTextEditKey.currentState?.requestKeyboard();
+    }
+  }
+
   void _onTapDown(_) {
     if (_controller.selection != null) {
       _controller.clearSelection();
-    } else {
-      if (!widget.hardwareKeyboardOnly) {
-        _customTextEditKey.currentState?.requestKeyboard();
-      } else {
-        _focusNode.requestFocus();
-      }
+    } else if (widget.hardwareKeyboardOnly) {
+      _focusNode.requestFocus();
     }
   }
 
