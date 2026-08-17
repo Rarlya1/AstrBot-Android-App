@@ -41,10 +41,10 @@ install_sudo_git_curl() {
   apt-get update
   apt --fix-broken install -y
   # 检查必要命令
-  ! command sudo && apt-get install -y sudo
+  ! command -v sudo && apt-get install -y sudo
   for cmd in sudo git curl; do
     if ! command -v $cmd >/dev/null 2>&1; then
-      echo "缺少 $cmd，尝试安装 $cmd"
+      progress_echo "缺少 $cmd，尝试安装 $cmd"
       sudo apt-get install -y $cmd
       if  ! command -v $cmd >/dev/null 2>&1; then
         echo "安装失败"
@@ -54,9 +54,6 @@ install_sudo_git_curl() {
   done
   progress_echo "git & curl $L_INSTALLED"
 }
-
-# 使 curl 命令强制使用 TLS1.2
-curl() { command curl --tlsv1.2 "$@"; }
 
 install_zh-hans() {
   # 检查是否已安装
@@ -456,6 +453,8 @@ install_astrbot() {
 install_zh-hans
 bump_progress
 install_sudo_git_curl
+# 使安装流程中后续 curl 命令强制使用 TLS1.2
+curl() { command curl --tlsv1.2 "$@"; }
 bump_progress
 bump_progress
 install_uv

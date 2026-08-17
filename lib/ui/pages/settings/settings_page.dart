@@ -987,10 +987,10 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _openFileManager() async {
     try {
       // 使用 DocumentsProvider 的 content URI 打开文件管理器
-      // authority: com.astrbot.astrbot_android.documents
+      // authority: com.astrbot.app.documents
       // rootId: ubuntu_root
       final contentUri = Uri.parse(
-        'content://com.astrbot.astrbot_android.documents/root/ubuntu_root',
+        'content://com.astrbot.app.documents/root/ubuntu_root',
       );
 
       if (await canLaunchUrl(contentUri)) {

@@ -2,7 +2,10 @@ name: Build APK
 
 on:
   push:
-    branches: [master, fork]
+    branches: [fork]
+  pull_request:
+    branches: [master]
+    types: [closed]
   workflow_dispatch:
 
 concurrency:
@@ -10,26 +13,24 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref_name == 'fork') ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true)
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        flavor:
-          - suffix: ''
-            apk_name: 'AstrBot_1.5.3fix'
-          - suffix: '.clone'
-            apk_name: 'AstrBot_1.5.3fix.clone'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.ref }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -61,31 +62,87 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-flutter-3.35.7-android-tools-
 
-      - name: Rename package for clone build
-        if: matrix.flavor.suffix != ''
-        run: |
-          # 替换包名
-          find android lib -type f \( -name "*.gradle" -o -name "*.xml" -o -name "*.dart" -o -name "*.java" -o -name "*.kt" \) \
-            -exec sed -i 's/com\.astrbot\.astrbot_android/com.astrbot.astrbot_android1/g' {} +
-          # 重命名 Java 目录
-          mv android/app/src/main/java/com/astrbot/astrbot_android \
-             android/app/src/main/java/com/astrbot/astrbot_android1 2>/dev/null || true
-
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Configure release signing
+        env:
+          SECRETS_PK8_BASE64: ${{ secrets.SECRETS_PK8_BASE64 }}
+          SECRETS_X509_PEM_BASE64: ${{ secrets.SECRETS_X509_PEM_BASE64 }}
+        run: |
+          test -n "$SECRETS_PK8_BASE64" || { echo 'Missing SECRETS_PK8_BASE64'; exit 1; }
+          test -n "$SECRETS_X509_PEM_BASE64" || { echo 'Missing SECRETS_X509_PEM_BASE64'; exit 1; }
+          printf '%s' "$SECRETS_PK8_BASE64" | base64 --decode > /tmp/secrets.pk8
+          printf '%s' "$SECRETS_X509_PEM_BASE64" | base64 --decode > /tmp/secrets.x509.pem
 
       - name: Build APK
         run: flutter build apk --release --no-pub
 
+      - name: Sign APK with pk8 and x509 certificate
+        run: |
+          BUILD_TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          "$BUILD_TOOLS/apksigner" sign \
+            --key /tmp/secrets.pk8 \
+            --cert /tmp/secrets.x509.pem \
+            --out build/app/outputs/flutter-apk/app-release-signed.apk \
+            build/app/outputs/flutter-apk/app-release.apk
+          "$BUILD_TOOLS/apksigner" verify --verbose \
+            build/app/outputs/flutter-apk/app-release-signed.apk
+          mv build/app/outputs/flutter-apk/app-release-signed.apk \
+             build/app/outputs/flutter-apk/app-release.apk
+          rm -f /tmp/secrets.pk8 /tmp/secrets.x509.pem
+
       - name: Rename APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/${{ matrix.flavor.apk_name }}.apk
+             build/app/outputs/flutter-apk/AstrBot.apk
 
-      - name: Upload APK artifacts
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.flavor.apk_name }}
-          path: build/app/outputs/flutter-apk/${{ matrix.flavor.apk_name }}.apk
+          name: AstrBot
+          path: build/app/outputs/flutter-apk/AstrBot.apk
           compression-level: 0
           if-no-files-found: error
+
+      - name: Generate release summary
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.merged == true
+        run: |
+          VERSION=$(sed -n 's/^version: *\([^+]*\)+.*/\1/p' pubspec.yaml)
+          TAG="v${VERSION}"
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+          {
+            printf '更新内容\n\n'
+            if [ -n "$PREVIOUS_TAG" ]; then
+              git log --pretty=format:'- %s (%h)' "${PREVIOUS_TAG}..HEAD"
+            else
+              git log --pretty=format:'- %s (%h)' HEAD
+            fi
+            printf '\n'
+          } > release-notes.md
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.merged == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" \
+              --title "AstrBot $RELEASE_VERSION" \
+              --notes-file release-notes.md
+            gh release upload "$RELEASE_TAG" \
+              build/app/outputs/flutter-apk/AstrBot.apk \
+              --clobber
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "AstrBot $RELEASE_VERSION" \
+              --notes-file release-notes.md \
+              build/app/outputs/flutter-apk/AstrBot.apk
+          fi
