@@ -29,15 +29,12 @@ class HomeController extends GetxController {
   Pty? napcatTerminal;
 
   final RxString napCatWebUiToken = ''.obs; // 存储 NapCat WebUI Token
-  final RxBool _isQrcodeShowing = false.obs;
-  int _qrcodeDialogGeneration = 0; // 二维码弹窗标记
   final RxBool napCatWebUiEnabledRx = false.obs; // GetX 响应式变量用于导航栏更新
   final RxBool showTerminalWhiteTextRx = false.obs; // GetX 响应式变量用于设置页更新
   final RxList<Map<String, String>> customWebViews =
       <Map<String, String>>[].obs; // 自定义 WebView 列表
   final RxInt navigateToTab = (-1).obs; // 通知 WebViewPage 切换标签页
-  Dialog? _qrcodeDialog;
-  StreamSubscription? _qrcodeSubscription;
+  StreamSubscription? _napcatSubscription;
   StreamSubscription? _webviewSubscription; // 添加webview监听订阅
 
   late Terminal terminal = Terminal(
@@ -54,7 +51,6 @@ class HomeController extends GetxController {
   );
   bool webviewHasOpen = false;
   final RxBool isLocalhostDetected = false.obs; // localhost:6185 检测标志
-  final RxBool isQrcodeProcessed = false.obs; // 二维码处理完成标志
   bool _isAppInForeground = true; // 应用是否在前台
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
   String _pendingOutput = ''; // 待处理的输出缓冲
@@ -234,11 +230,10 @@ class HomeController extends GetxController {
     }
   }
 
-  // 检查两个条件是否都满足，如果满足则触发跳转
+  // 检查条件是否满足，如果满足则触发跳转
   void _checkAndNavigateToWebview() {
-    // 只有当两个条件都满足且应用在前台时才跳转
+    // 只有当条件满足且应用在前台时才跳转
     if (isLocalhostDetected.value &&
-        isQrcodeProcessed.value &&
         _isAppInForeground &&
         !webviewHasOpen) {
       Future.microtask(() {
@@ -296,10 +291,10 @@ class HomeController extends GetxController {
     });
   }
 
-  void initQrcodeListener() {
+  void initNapcatListener() {
     if (napcatTerminal == null) return;
 
-    _qrcodeSubscription = napcatTerminal!.output
+    _napcatSubscription = napcatTerminal!.output
         .cast<List<int>>()
         .transform(const Utf8Decoder(allowMalformed: true))
         .listen((event) async {
@@ -327,123 +322,17 @@ class HomeController extends GetxController {
         }
       }
 
-      // 检测指令1显示二维码
-      if (event.contains('二维码已保存到') && !_isQrcodeShowing.value) {
-        _isQrcodeShowing.value = true;
-        final dialogGeneration = ++_qrcodeDialogGeneration;
-        final qrcodePath = '$ubuntuPath/root/Napcat/napcat/cache/qrcode.png';
-        final qrcodeFile = File(qrcodePath);
-
-        if (await qrcodeFile.exists()) {
-          // 二维码文件路径固定为 qrcode.png，直接使用 Image.file 可能命中Flutter ImageCache，因此先读取当前文件内容再用 Image.memory 展示
-          final qrcodeBytes = await qrcodeFile.readAsBytes();
-          if (dialogGeneration != _qrcodeDialogGeneration) return;
-
-          _qrcodeDialog = Dialog(
-            backgroundColor: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    '请用手机QQ扫码登录',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Image.memory(
-                    qrcodeBytes,
-                    key: ValueKey(dialogGeneration),
-                    width: 200,
-                    height: 200,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
-            ),
-          );
-
-          // 使用GetX的导航管理避免上下文问题
-          await Get.dialog(
-            _qrcodeDialog!,
-            barrierDismissible: false,
-          );
-
-          // 只有当前弹窗状态未更新时，才允许清理状态
-          if (dialogGeneration == _qrcodeDialogGeneration) {
-            _isQrcodeShowing.value = false;
-            _qrcodeDialog = null;
-          }
-        } else {
-          Get.showSnackbar(GetSnackBar(
-            message: '二维码图片不存在：$qrcodePath',
-            duration: const Duration(seconds: 3),
-          ));
-          _isQrcodeShowing.value = false;
-        }
-      }
-
-      // 检测指令2关闭二维码并取消监听
-      if (event.contains('配置加载') && _isQrcodeShowing.value) {
-        // 关闭对话框
-        if (_qrcodeDialog != null) {
-          Get.back();
-          _isQrcodeShowing.value = false;
-          _qrcodeDialog = null;
-        }
-
-        // 标记二维码处理完成
-        isQrcodeProcessed.value = true;
-
-        // 检查是否两个条件都满足
-        _checkAndNavigateToWebview();
-
-        // 不取消订阅，继续监听以便终端日志持续更新
-      }
-
-      // 检测指令3napcat启动完成（快速登录无二维码）
-      if (event.contains('协议适配器初始化完成') && !isQrcodeProcessed.value) {
-
-        // 标记二维码处理完成
-        isQrcodeProcessed.value = true;
-
-        // 检查是否两个条件都满足
-        _checkAndNavigateToWebview();
-
-        // 不取消订阅，继续监听以便终端日志持续更新
-      }
-
-      // 检测指令4处理登录错误
-      if (event.contains('Login Error') && _isQrcodeShowing.value) {
-        // 使当前二维码弹窗失效，避免 await Get.dialog 返回后覆盖下一张二维码
-        _qrcodeDialogGeneration++;
-        // 关闭二维码对话框
-        if (_qrcodeDialog != null) {
-          Get.back();
-          _isQrcodeShowing.value = false;
-          _qrcodeDialog = null;
-        }
-
-        // 提取错误信息
-        String errorMsg = '登录失败';
-        if (event.contains('"message":"')) {
-          final match = RegExp(r'"message":"([^"]+)"').firstMatch(event);
-          if (match != null) {
-            errorMsg = match.group(1) ?? errorMsg;
-          }
-        }
-
-        // 显示错误提示
+      if (event.contains('请扫描下面的二维码')) {
         Get.snackbar(
-          'NapCat 登录失败',
-          errorMsg,
+          'NapCat 未登录',
+          '请前往 NapCat 终端页或 WebUI 自行扫码登录',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.withValues(alpha: 0.8),
           colorText: Colors.white,
           duration: const Duration(seconds: 5),
         );
 
-        // 不取消订阅，允许用户重新扫码
+        // 不取消订阅，继续监听以便终端日志持续更新
       }
 
       // 写入 NapCat 终端视图
@@ -646,7 +535,7 @@ class HomeController extends GetxController {
     initWebviewListener();
     bumpProgress();
 
-    initQrcodeListener();
+    initNapcatListener();
 
     startAstrBot(pseudoTerminal!);
   }
@@ -691,6 +580,13 @@ class HomeController extends GetxController {
         // 已安装，直接跳转
         webviewHasOpen = true;
         Get.toNamed(AppRoutes.webview);
+      } else {
+        Get.snackbar(
+          '温馨提示',
+          '点击任意位置可显示安装过程',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
       }
 
       // 加载并启动 AstrBot
@@ -709,8 +605,8 @@ class HomeController extends GetxController {
       LifecycleObserver(
         onResume: () {
           _isAppInForeground = true;
-          // 当应用回到前台且两个条件都满足但webview未打开时，打开webview
-          if (isLocalhostDetected.value && isQrcodeProcessed.value && !webviewHasOpen) {
+          // 当应用回到前台且条件满足但webview未打开时，打开webview
+          if (isLocalhostDetected.value && !webviewHasOpen) {
             Future.microtask(() {
               Get.toNamed(AppRoutes.webview);
               webviewHasOpen = true;
@@ -798,9 +694,9 @@ class HomeController extends GetxController {
   @override
   void onClose() {
     // 清理订阅，避免内存泄漏
-    _qrcodeSubscription?.cancel();
+    _napcatSubscription?.cancel();
     _webviewSubscription?.cancel();
-    _qrcodeSubscription = null;
+    _napcatSubscription = null;
     _webviewSubscription = null;
 
     // 杀死所有终端进程，释放端口

@@ -1,4 +1,4 @@
-package com.astrbot.astrbot_android;
+package com.astrbot.app;
 
 import android.database.Cursor;
 import android.database.MatrixCursor;

@@ -51,7 +51,7 @@ Future<void> main() async {
     systemNavigationBarColor: Colors.transparent,
     systemNavigationBarDividerColor: Colors.transparent,
   ));
-  RuntimeEnvir.initEnvirWithPackageName('com.astrbot.astrbot_android');
+  RuntimeEnvir.initEnvirWithPackageName('com.astrbot.app');
   await initSettingStore(RuntimeEnvir.configPath);
   runApp(const AstrBot());
 

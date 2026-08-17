@@ -1,14 +1,44 @@
 
 # 🤖 AstrBot 安卓 App：让每一个普通人都能拥有自己的 AI 聊天机器人
 
-> ⚠️ **特别声明**：  
-> 本项目为基于[zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App) 二次开发。  
-> 在原版的基础上，优化：
-> 1. 修复卡在加载界面，加载时间过长会显示"直接进入"按钮
-> 2. 修复初始密码astrbot不可用，AstrBot的账号密码均为**astrbot**
-> 4. WebView从flutter层迁移到原生Android覆盖层
-> 5. 网页加载时机延后
-> 其他优化: 清理多余进程，延长napcat webui登录有效期等
+> ⚠️ **特别声明**：本项目基于 [zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App) 二次开发和维护。
+
+## 当前维护内容
+
+以下内容为更改包名前 相较于 AstrBot-Android-App 1.5.3 的最终更新内容。
+
+### 新增功能
+
+- 新增终端支持中文环境。
+- 新增固定 NapCat 终端标签页，方便查看 NapCat日志。
+- 新增终端小键盘，提供`Ctrl`、`Alt`、`Shift` 修饰键及常用组合键， `Esc`、`Tab`、方向键、删除、翻页、行首行尾等常用按键，方便操作命令行。
+- 长按方向键可快速移动光标、切换历史命令。
+- 新增终端文本长按复制功能，长按选中文本后松手即可复制。
+
+### 修复与优化
+
+- 使用原生 WebView ，访问 WebUI 无卡顿。
+- 优化终端滚动输出，不会到达上限停止更新。
+- 优化 后台进程处理，关闭终端页不会有残留进程。
+- 优化网络下载，减少因为网络波动导致安装失败的概率。
+- 优化 NapCat 不再强制弹窗扫码登录，无需登录 NapCat 也可进入app。
+- 优化 AstrBot 通过重新安装更新，WebUI 可以同步更新。
+- 修复无网络时连点检查更新卡死在加载界面。
+- 修复开启终端白色文本，不会再无限累加内存占用，并默认启用显示白色文本。
+- 修复 AstrBot 本体重启，在 AstrBot面板更新后无需重启整个app。
+
+### 其他细节更新
+
+- NapCat 未登录时提示扫码登录。
+- 安装时提示可点击空白处切换显示安装过程。
+- 安装完成后后续进入无需等待 AstrBot 启动。
+- 在启动时请求存储权限，避免因无存储权限无法从备份中恢复。
+
+### 后续计划
+
+- 适配深色模式
+- 自定义接入平台
+- 暂无更多
 
 你是否想过，用自己的 QQ 号，变成一个可以自动回复消息、调用大模型进行智能对话的“AI 账号”？
 
@@ -255,7 +285,7 @@
 
 ## 📲 **立即体验**  
  - 123 云盘：如果你不知道如何访问 github，请从 123 云盘的 [**分享链接**](https://www.123865.com/s/N4mNjv-OubQ3) 下载（小白推荐）。  
- - GitHub 仓库：[https://github.com/zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App)  在 release 页面下载最新版本 `.apk` 文件安装即可使用
+ - GitHub 仓库：[https://github.com/Rarlya1/AstrBot-Android-App](https://github.com/Rarlya1/AstrBot-Android-App)  在 [Releases](https://github.com/Rarlya1/AstrBot-Android-App/releases) 页面下载最新的 `AstrBot.apk` 安装即可使用
 
 ---
 

@@ -58,16 +58,16 @@ change_ubuntu_source(){
   cat <<EOF > "$UBUNTU_PATH/etc/apt/sources.list"
 # 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
 # Defaultly commented out source mirrors to speed up apt update, uncomment if needed
-deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble main restricted universe multiverse
 # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble main restricted universe multiverse
-deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble-updates main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble-updates main restricted universe multiverse
 # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble-updates main restricted universe multiverse
-deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble-backports main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble-backports main restricted universe multiverse
 # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ noble-backports main restricted universe multiverse
 
 # 以下安全更新软件源包含了官方源与镜像站配置，如有需要可自行修改注释切换
 # The following security update software sources include both official and mirror configurations, modify comments to switch if needed
-# deb http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
+# deb https://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
 # deb-src http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
 
 # 预发布软件源，不建议启用

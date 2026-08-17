@@ -11,7 +11,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter/services.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../../core/constants/scripts.dart' as scripts;
-import '../../../core/services/password_manager.dart';
 import '../../../core/config/app_config.dart';
 
 /// 原生 WebView 通道
@@ -159,7 +158,9 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
 
-      Get.back(); // 关闭加载提示
+      if (Get.isDialogOpen == true) {
+        Get.back(); // 关闭加载提示
+      }
 
       if (releaseData == null) {
         Get.snackbar(
@@ -190,7 +191,9 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     } catch (e) {
-      Get.back(); // 关闭加载提示
+      if (Get.isDialogOpen == true) {
+        Get.back(); // 关闭加载提示
+      }
       Log.e('检查更新失败: $e', tag: 'AstrBot');
       Get.snackbar(
         '检查失败',
@@ -984,10 +987,10 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _openFileManager() async {
     try {
       // 使用 DocumentsProvider 的 content URI 打开文件管理器
-      // authority: com.astrbot.astrbot_android.documents
+      // authority: com.astrbot.app.documents
       // rootId: ubuntu_root
       final contentUri = Uri.parse(
-        'content://com.astrbot.astrbot_android.documents/root/ubuntu_root',
+        'content://com.astrbot.app.documents/root/ubuntu_root',
       );
 
       if (await canLaunchUrl(contentUri)) {
@@ -1434,7 +1437,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.refresh),
           title: const Text('重置 Python 环境'),
-          subtitle: const Text('删除虚拟环境并重启应用，启动时将自动重建'),
+          subtitle: const Text('删除 AstrBot 虚拟环境并重启应用，启动时将自动重建'),
           onTap: () async {
             // 显示确认对话框
             final confirmed = await Get.dialog<bool>(
@@ -1670,15 +1673,14 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.delete_outline),
           title: const Text('清空 WebView 缓存'),
-          subtitle: const Text('清理所有 WebView 缓存和密码'),
+          subtitle: const Text('清理所有 WebView 缓存'),
           onTap: () async {
             try {
               await _nativeWebViewChannel.invokeMethod('clearCache');
-              await PasswordManager.clearAllPasswords();
               if (context.mounted) {
                 Get.snackbar(
                   '成功',
-                  'WebView 缓存和密码已清理',
+                  'WebView 缓存已清理',
                   snackPosition: SnackPosition.BOTTOM,
                 );
               }
