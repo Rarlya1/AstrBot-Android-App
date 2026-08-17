@@ -19,6 +19,7 @@ class TerminalTabView extends StatefulWidget {
 
 class _TerminalTabViewState extends State<TerminalTabView> {
   final HomeController homeController = Get.find<HomeController>();
+  bool _isCopyDialogOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -200,19 +201,45 @@ class _TerminalTabViewState extends State<TerminalTabView> {
     );
   }
 
-  void _tryCopySelection(TerminalTab tab) {
+  Future<void> _tryCopySelection(TerminalTab tab) async {
+    if (_isCopyDialogOpen) return;
+
     final range = tab.controller.selection;
     if (range != null && !range.isCollapsed) {
       final text = tab.terminal.buffer.getText(range);
       if (text.isNotEmpty) {
-        Clipboard.setData(ClipboardData(text: text));
-        tab.controller.clearSelection();
-        Get.snackbar(
-          '已复制',
-          '终端文本已复制到剪贴板',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
-        );
+        _isCopyDialogOpen = true;
+        try {
+          final shouldCopy = await Get.dialog<bool>(
+            AlertDialog(
+              title: const Text('复制终端文本'),
+              content: const Text('是否复制已选中的文本？'),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(result: false),
+                  child: const Text('取消'),
+                ),
+                TextButton(
+                  onPressed: () => Get.back(result: true),
+                  child: const Text('复制'),
+                ),
+              ],
+            ),
+            barrierDismissible: true,
+          );
+          if (shouldCopy == true) {
+            await Clipboard.setData(ClipboardData(text: text));
+            Get.snackbar(
+              '已复制',
+              '终端文本已复制到剪贴板',
+              snackPosition: SnackPosition.BOTTOM,
+              duration: const Duration(seconds: 2),
+            );
+          }
+        } finally {
+          _isCopyDialogOpen = false;
+          tab.controller.clearSelection();
+        }
       }
     }
   }
