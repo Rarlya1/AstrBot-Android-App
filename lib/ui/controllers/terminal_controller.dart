@@ -53,6 +53,8 @@ class HomeController extends GetxController {
   final RxBool isLocalhostDetected = false.obs; // localhost:6185 检测标志
   bool _isAppInForeground = true; // 应用是否在前台
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
+  bool _isNapCatLogin = false; // NapCat 登录标记
+  bool _isNapCatQuickLogin = false; // NapCat 快速登录标记
   String _pendingOutput = ''; // 待处理的输出缓冲
 
   File progressFile = File('${RuntimeEnvir.tmpPath}/progress');
@@ -240,6 +242,26 @@ class HomeController extends GetxController {
         // 使用路由跳转
         Get.toNamed(AppRoutes.webview);
         webviewHasOpen = true; // 只有真正打开webview时才设置为true
+        if (!_isNapCatLogin && !_isNapCatQuickLogin) {
+          Get.snackbar(
+            'NapCat 未登录',
+            '请前往 NapCat 终端页或 WebUI 自行扫码登录',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+        } else if (!_isNapCatLogin && _isNapCatQuickLogin) {
+          Get.snackbar(
+            'NapCat 未配置快速登录',
+            '请前往设置页配置快速登录QQ账号设置',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.yellow.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+          _isNapCatLogin = true; // 视为已登录，防止重复触发
+        }
       });
     }
   }
@@ -322,17 +344,12 @@ class HomeController extends GetxController {
         }
       }
 
-      if (event.contains('请扫描下面的二维码')) {
-        Get.snackbar(
-          'NapCat 未登录',
-          '请前往 NapCat 终端页或 WebUI 自行扫码登录',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.withValues(alpha: 0.8),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 5),
-        );
+      if (event.contains('可用于快速登录')) {
+        _isNapCatQuickLogin = true;
+      }
 
-        // 不取消订阅，继续监听以便终端日志持续更新
+      if (event.contains('正在快速登录')) {
+        _isNapCatLogin = true;
       }
 
       // 写入 NapCat 终端视图

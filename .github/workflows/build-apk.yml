@@ -130,17 +130,42 @@ jobs:
             : > "$NOTES_DIR/$CATEGORY"
           done
 
-          while IFS= read -r SUBJECT; do
-            [[ "$SUBJECT" == Merge\ pull\ request\ * ]] && continue
-            if [[ "$SUBJECT" =~ ^(新增|优化|修复|更新|修改|移除|其他)[[:space:]]+(.+)$ ]]; then
-              CATEGORY="${BASH_REMATCH[1]}"
-              CONTENT="${BASH_REMATCH[2]}"
-            else
-              CATEGORY=其他
-              CONTENT="$SUBJECT"
-            fi
-            printf '%s\n' "- $CONTENT" >> "$NOTES_DIR/$CATEGORY"
-          done < <(git log --pretty=format:'%s' "$LOG_RANGE")
+          python3 - "$LOG_RANGE" "$NOTES_DIR" <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          log_range, notes_dir = sys.argv[1:]
+          categories = ("新增", "优化", "修复", "更新", "修改", "移除", "其他")
+          separators = r"，,、；;：:|/／\\\\\\s"
+          label_pattern = re.compile(
+              rf"(?:^|[{separators}])(?P<label>{'|'.join(categories)})"
+              rf"(?=[{separators}]|$)"
+          )
+          trim_pattern = re.compile(rf"^[{separators}]+|[{separators}]+$")
+
+          subjects = subprocess.check_output(
+              ["git", "log", "--pretty=format:%s", log_range], text=True
+          ).splitlines()
+          for subject in subjects:
+              if subject.startswith("Merge pull request"):
+                  continue
+
+              matches = list(label_pattern.finditer(subject))
+              if not matches:
+                  with open(f"{notes_dir}/其他", "a", encoding="utf-8") as output:
+                      output.write(f"- {subject}\\n")
+                  continue
+
+              for index, match in enumerate(matches):
+                  category = match.group("label")
+                  content_start = match.end()
+                  content_end = matches[index + 1].start() if index + 1 < len(matches) else len(subject)
+                  content = trim_pattern.sub("", subject[content_start:content_end]).strip()
+                  if content:
+                      with open(f"{notes_dir}/{category}", "a", encoding="utf-8") as output:
+                          output.write(f"- {content}\\n")
+          PY
 
           : > release-notes.md
           for CATEGORY in 新增 优化 修复 更新 修改 移除 其他; do
