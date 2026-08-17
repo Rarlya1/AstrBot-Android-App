@@ -210,10 +210,15 @@ class _TerminalTabViewState extends State<TerminalTabView> {
       if (text.isNotEmpty) {
         _isCopyDialogOpen = true;
         try {
+          String displayText = text;
+          if (text.length > 300) {
+            displayText = text.substring(0, 300) + '\n... (共 ${text.length} 个字符，已折叠)';
+          }
+
           final shouldCopy = await Get.dialog<bool>(
             AlertDialog(
               title: const Text('复制终端文本'),
-              content: const Text('是否复制已选中的文本？'),
+              content: Text('$displayText\n\n是否复制已选中的文本？'),
               actions: [
                 TextButton(
                   onPressed: () => Get.back(result: false),
