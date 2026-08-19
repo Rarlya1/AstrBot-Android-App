@@ -38,20 +38,22 @@ bump_progress() {
 }
 
 install_sudo_git_curl() {
-  apt-get update
-  apt --fix-broken install -y
+  
   # 检查必要命令
-  ! command -v sudo && apt-get install -y sudo
-  for cmd in sudo git curl; do
-    if ! command -v $cmd >/dev/null 2>&1; then
-      progress_echo "缺少 $cmd，尝试安装 $cmd"
-      sudo apt-get install -y $cmd
-      if  ! command -v $cmd >/dev/null 2>&1; then
-        echo "安装失败"
-        exit 1
+  if ! command -v sudo; then
+    apt-get update
+    apt --fix-broken install -y && apt-get install -y sudo
+    for cmd in sudo git curl; do
+      if ! command -v $cmd >/dev/null 2>&1; then
+        progress_echo "缺少 $cmd，尝试安装 $cmd"
+        sudo apt-get install -y $cmd
+        if  ! command -v $cmd >/dev/null 2>&1; then
+          echo "安装失败"
+          exit 1
+        fi
       fi
-    fi
-  done
+    done
+  fi
   progress_echo "git & curl $L_INSTALLED"
 }
 
