@@ -57,6 +57,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+  fonts:
+    - family: Cascadia Next SC NF
+      fonts:
+        - asset: fonts/CascadiaNextSCNF.ttf
 
 flutter_intl:
   enabled: true

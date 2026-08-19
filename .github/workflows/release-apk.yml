@@ -1,0 +1,109 @@
+name: Publish APK Release
+
+on:
+  pull_request:
+    branches: [master]
+    types: [closed]
+
+concurrency:
+  group: publish-apk-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout merge commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Read app version
+        run: |
+          VERSION=$(sed -n 's/^version: *\([^+]*\)+.*/\1/p' pubspec.yaml)
+          test -n "$VERSION" || { echo 'Unable to read app version'; exit 1; }
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v$VERSION" >> "$GITHUB_ENV"
+
+      - name: Find latest successful fork build for this PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mapfile -t PR_COMMITS < <(gh pr view "$PR_NUMBER" --json commits --jq '.commits[].oid')
+          test "${#PR_COMMITS[@]}" -gt 0 || { echo 'No PR commits found'; exit 1; }
+
+          RUN_ID=""
+          while read -r ID SHA; do
+            for COMMIT in "${PR_COMMITS[@]}"; do
+              if [ "$SHA" = "$COMMIT" ]; then
+                RUN_ID="$ID"
+                break 2
+              fi
+            done
+          done < <(gh run list --workflow build-apk.yml --branch fork --status success --limit 100 --json databaseId,headSha --jq '.[] | [.databaseId, .headSha] | @tsv')
+
+          test -n "$RUN_ID" || { echo 'No successful fork build found for this PR'; exit 1; }
+          echo "Using successful fork build $RUN_ID"
+          gh run download "$RUN_ID" --dir downloaded-artifact
+          APK=$(find downloaded-artifact -type f -name '*.apk' | head -n 1)
+          test -n "$APK" || { echo 'APK not found in build artifact'; exit 1; }
+          cp "$APK" "AstrBot-v${RELEASE_VERSION}.apk"
+
+      - name: Generate release summary
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+          if [ -n "$PREVIOUS_TAG" ]; then LOG_RANGE="${PREVIOUS_TAG}..HEAD"; else LOG_RANGE=HEAD; fi
+
+          NOTES_DIR=$(mktemp -d)
+          trap 'rm -rf "$NOTES_DIR"' EXIT
+          for CATEGORY in 新增 优化 修复 更新 修改 移除 其他; do : > "$NOTES_DIR/$CATEGORY"; done
+
+          python3 - "$LOG_RANGE" "$NOTES_DIR" <<'PY'
+          import re, subprocess, sys
+          log_range, notes_dir = sys.argv[1:]
+          categories = ("新增", "优化", "修复", "更新", "修改", "移除", "其他")
+          separators = r"\s，,、；;：:|/／\\"
+          label = re.compile(rf"(?:^|[{separators}])(?P<label>{'|'.join(categories)})(?=[{separators}]|$)")
+          trim = re.compile(rf"^[{separators}]+|[{separators}]+$")
+          subjects = subprocess.check_output(["git", "log", "--reverse", "--pretty=format:%s", log_range], text=True).splitlines()
+          for subject in subjects:
+              if subject.startswith("Merge pull request"): continue
+              matches = list(label.finditer(subject))
+              if not matches:
+                  with open(f"{notes_dir}/其他", "a", encoding="utf-8") as f: f.write(f"- {subject}\n")
+                  continue
+              for i, match in enumerate(matches):
+                  end = matches[i + 1].start() if i + 1 < len(matches) else len(subject)
+                  content = trim.sub("", subject[match.end():end]).strip()
+                  if content:
+                      with open(f"{notes_dir}/{match.group('label')}", "a", encoding="utf-8") as f: f.write(f"- {content}\n")
+          PY
+
+          : > release-notes.md
+          for CATEGORY in 新增 优化 修复 更新 修改 移除 其他; do
+            if [ -s "$NOTES_DIR/$CATEGORY" ]; then
+              printf '%s\n' "$CATEGORY" >> release-notes.md
+              cat "$NOTES_DIR/$CATEGORY" >> release-notes.md
+              printf '\n' >> release-notes.md
+            fi
+          done
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --title "AstrBot $RELEASE_VERSION" --notes-file release-notes.md
+            gh release upload "$RELEASE_TAG" "AstrBot-v${RELEASE_VERSION}.apk" --clobber
+          else
+            gh release create "$RELEASE_TAG" --target "${{ github.event.pull_request.merge_commit_sha }}" --title "AstrBot $RELEASE_VERSION" --notes-file release-notes.md "AstrBot-v${RELEASE_VERSION}.apk"
+          fi

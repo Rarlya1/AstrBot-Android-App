@@ -3,9 +3,6 @@ name: Build APK
 on:
   push:
     branches: [fork]
-  pull_request:
-    branches: [master]
-    types: [closed]
   workflow_dispatch:
 
 concurrency:
@@ -17,11 +14,7 @@ permissions:
 
 jobs:
   build:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && github.ref_name == 'fork') ||
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.merged == true)
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name == 'fork')
     timeout-minutes: 45
     runs-on: ubuntu-latest
 
@@ -30,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.ref }}
+          ref: ${{ github.ref }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -111,89 +104,3 @@ jobs:
           path: build/app/outputs/flutter-apk/AstrBot-v${{ env.RELEASE_VERSION }}.apk
           compression-level: 0
           if-no-files-found: error
-
-      - name: Generate release summary
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.merged == true
-        run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
-          if [ -n "$PREVIOUS_TAG" ]; then
-            LOG_RANGE="${PREVIOUS_TAG}..HEAD"
-          else
-            LOG_RANGE=HEAD
-          fi
-
-          NOTES_DIR=$(mktemp -d)
-          trap 'rm -rf "$NOTES_DIR"' EXIT
-          for CATEGORY in 新增 优化 修复 更新 修改 移除 其他; do
-            : > "$NOTES_DIR/$CATEGORY"
-          done
-
-          python3 - "$LOG_RANGE" "$NOTES_DIR" <<'PY'
-          import re
-          import subprocess
-          import sys
-
-          log_range, notes_dir = sys.argv[1:]
-          categories = ("新增", "优化", "修复", "更新", "修改", "移除", "其他")
-          separators = r"，,、；;：:|/／\\\\\\s"
-          label_pattern = re.compile(
-              rf"(?:^|[{separators}])(?P<label>{'|'.join(categories)})"
-              rf"(?=[{separators}]|$)"
-          )
-          trim_pattern = re.compile(rf"^[{separators}]+|[{separators}]+$")
-
-          subjects = subprocess.check_output(
-              ["git", "log", "--pretty=format:%s", log_range], text=True
-          ).splitlines()
-          for subject in subjects:
-              if subject.startswith("Merge pull request"):
-                  continue
-
-              matches = list(label_pattern.finditer(subject))
-              if not matches:
-                  with open(f"{notes_dir}/其他", "a", encoding="utf-8") as output:
-                      output.write(f"- {subject}\\n")
-                  continue
-
-              for index, match in enumerate(matches):
-                  category = match.group("label")
-                  content_start = match.end()
-                  content_end = matches[index + 1].start() if index + 1 < len(matches) else len(subject)
-                  content = trim_pattern.sub("", subject[content_start:content_end]).strip()
-                  if content:
-                      with open(f"{notes_dir}/{category}", "a", encoding="utf-8") as output:
-                          output.write(f"- {content}\\n")
-          PY
-
-          : > release-notes.md
-          for CATEGORY in 新增 优化 修复 更新 修改 移除 其他; do
-            if [ -s "$NOTES_DIR/$CATEGORY" ]; then
-              printf '%s\n' "$CATEGORY" >> release-notes.md
-              cat "$NOTES_DIR/$CATEGORY" >> release-notes.md
-              printf '\n' >> release-notes.md
-            fi
-          done
-
-      - name: Publish GitHub Release
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.merged == true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" \
-              --title "AstrBot $RELEASE_VERSION" \
-              --notes-file release-notes.md
-            gh release upload "$RELEASE_TAG" \
-              "build/app/outputs/flutter-apk/AstrBot-v${RELEASE_VERSION}.apk" \
-              --clobber
-          else
-            gh release create "$RELEASE_TAG" \
-              --target "$GITHUB_SHA" \
-              --title "AstrBot $RELEASE_VERSION" \
-              --notes-file release-notes.md \
-              "build/app/outputs/flutter-apk/AstrBot-v${RELEASE_VERSION}.apk"
-          fi

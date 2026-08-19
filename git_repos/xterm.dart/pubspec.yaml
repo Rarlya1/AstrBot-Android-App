@@ -59,7 +59,3 @@ flutter:
   #
   # For details regarding fonts in packages, see
   # https://flutter.dev/custom-fonts/#from-packages
-  fonts:
-    - family: Cascadia Next SCNF
-      fonts:
-        - asset: fonts/CascadiaNextSCNF-Bold.ttf

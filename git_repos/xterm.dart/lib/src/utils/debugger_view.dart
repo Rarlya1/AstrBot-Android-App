@@ -118,9 +118,8 @@ class _CommandItem extends StatelessWidget {
                   style: TextStyle(
                     color: selected ? Colors.blue : Colors.black,
                     fontSize: 14,
-                    fontFamily: 'Cascadia Next SCNF',
+                    fontFamily: 'Cascadia Next SC NF',
                     fontFamilyFallback: [
-                      'monospace'
                       'Menlo',
                       'Monaco',
                       'Consolas',
