@@ -4,9 +4,10 @@ const _kDefaultFontSize = 13.0;
 
 const _kDefaultHeight = 1.2;
 
-const _kDefaultFontFamily = 'monospace';
+const _kDefaultFontFamily = 'Cascadia Next SCNF';
 
 const _kDefaultFontFamilyFallback = [
+  'monospace'
   'Menlo',
   'Monaco',
   'Consolas',
