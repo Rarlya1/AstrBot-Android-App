@@ -20,6 +20,13 @@ class TerminalTabView extends StatefulWidget {
 class _TerminalTabViewState extends State<TerminalTabView> {
   final HomeController homeController = Get.find<HomeController>();
   bool _isCopyDialogOpen = false;
+  final Map<int, Offset> _terminalPointers = <int, Offset>{};
+  double? _pinchStartDistance;
+  double? _pinchStartFontSize;
+  bool _isPinching = false;
+
+  static const double _fontSizeStep = 0.2;
+  static const double _distancePerFontSizeStep = 24.0;
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +190,47 @@ class _TerminalTabViewState extends State<TerminalTabView> {
       children: [
         Expanded(
           child: Listener(
-            onPointerUp: (_) => _tryCopySelection(tab),
+            onPointerDown: (event) {
+              _terminalPointers[event.pointer] = event.localPosition;
+              if (_terminalPointers.length == 2) {
+                final points = _terminalPointers.values.toList();
+                _pinchStartDistance = (points[0] - points[1]).distance;
+                _pinchStartFontSize = homeController.terminalFontSize.value;
+                _isPinching = true;
+              }
+            },
+            onPointerMove: (event) {
+              if (!_terminalPointers.containsKey(event.pointer)) return;
+              _terminalPointers[event.pointer] = event.localPosition;
+              if (_terminalPointers.length != 2 ||
+                  _pinchStartDistance == null ||
+                  _pinchStartFontSize == null) {
+                return;
+              }
+
+              final points = _terminalPointers.values.toList();
+              final distance = (points[0] - points[1]).distance;
+              final distanceDelta = distance - _pinchStartDistance!;
+              final sizeDelta = (distanceDelta / _distancePerFontSizeStep).round() * _fontSizeStep;
+              homeController.setTerminalFontSize(
+                _pinchStartFontSize! + sizeDelta,
+              );
+            },
+            onPointerUp: (event) {
+              _terminalPointers.remove(event.pointer);
+              final wasPinching = _isPinching;
+              if (_terminalPointers.isEmpty) {
+                _pinchStartDistance = null;
+                _pinchStartFontSize = null;
+                _isPinching = false;
+              }
+              if (!wasPinching) _tryCopySelection(tab);
+            },
+            onPointerCancel: (event) {
+              _terminalPointers.remove(event.pointer);
+              _pinchStartDistance = null;
+              _pinchStartFontSize = null;
+            },
             child: ClipRect(
               child: TerminalView(
                 tab.terminal,
@@ -191,6 +238,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                 readOnly: tab.type == TerminalTabType.fixed,
                 backgroundOpacity: 1,
                 theme: ManjaroTerminalTheme(),
+                textStyle: TerminalStyle(fontSize: homeController.terminalFontSize.value),
               ),
             ),
           ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_pty/flutter_pty.dart';
 import 'package:get/get.dart';
@@ -19,6 +20,9 @@ import 'terminal_tab_manager.dart';
 
 class HomeController extends GetxController {
   static const _nativeWebViewChannel = MethodChannel('astrbot_native_webview');
+  static const double defaultTerminalFontSize = 12.0;
+  static const double minTerminalFontSize = 8.0;
+  static const double maxTerminalFontSize = 16.0;
   // 终端标签页管理器
   late final TerminalTabManager terminalTabManager;
   // bool vsCodeStaring = false;
@@ -31,6 +35,8 @@ class HomeController extends GetxController {
   final RxString napCatWebUiToken = ''.obs; // 存储 NapCat WebUI Token
   final RxBool napCatWebUiEnabledRx = false.obs; // GetX 响应式变量用于导航栏更新
   final RxBool showTerminalWhiteTextRx = false.obs; // GetX 响应式变量用于设置页更新
+  // 仅保存在当前运行期间，应用重启后恢复 xterm 默认字号
+  final RxDouble terminalFontSize = defaultTerminalFontSize.obs;
   final RxList<Map<String, String>> customWebViews =
       <Map<String, String>>[].obs; // 自定义 WebView 列表
   final RxInt navigateToTab = (-1).obs; // 通知 WebViewPage 切换标签页
@@ -62,6 +68,10 @@ class HomeController extends GetxController {
   final RxDouble progress = 0.0.obs;
   double step = 14.0;
   final RxString currentProgress = ''.obs;
+
+  void setTerminalFontSize(double size) {
+    terminalFontSize.value = size.clamp(minTerminalFontSize, maxTerminalFontSize).toDouble();
+  }
 
   // 进度 +1
   // Progress +1

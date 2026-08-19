@@ -66,9 +66,7 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     final cs = Theme.of(context).colorScheme;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
+    return Container(
       margin: EdgeInsets.only(bottom: bottom),
       decoration: BoxDecoration(
         color: cs.surface,

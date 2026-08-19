@@ -16,7 +16,7 @@ permissions:
 jobs:
   publish:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    timeout-minutes: 10
+    timeout-minutes: 60
     runs-on: ubuntu-latest
 
     steps:
@@ -36,23 +36,49 @@ jobs:
       - name: Find latest successful fork build for this PR
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          mapfile -t PR_COMMITS < <(gh pr view "$PR_NUMBER" --json commits --jq '.commits[].oid')
-          test "${#PR_COMMITS[@]}" -gt 0 || { echo 'No PR commits found'; exit 1; }
+          test -n "$EXPECTED_SHA" || { echo 'No PR head commit found'; exit 1; }
+          echo "Waiting for the latest fork build of PR head $EXPECTED_SHA"
 
           RUN_ID=""
-          while read -r ID SHA; do
-            for COMMIT in "${PR_COMMITS[@]}"; do
-              if [ "$SHA" = "$COMMIT" ]; then
-                RUN_ID="$ID"
-                break 2
-              fi
-            done
-          done < <(gh run list --workflow build-apk.yml --branch fork --status success --limit 100 --json databaseId,headSha --jq '.[] | [.databaseId, .headSha] | @tsv')
+          BUILD_SUCCEEDED=false
+          for ATTEMPT in {1..12}; do
+            RUN_INFO=$(gh run list \
+              --workflow build-apk.yml \
+              --branch fork \
+              --commit "$EXPECTED_SHA" \
+              --limit 100 \
+              --json databaseId,headSha,status,conclusion,createdAt \
+              --jq 'sort_by(.createdAt) | last // empty')
 
-          test -n "$RUN_ID" || { echo 'No successful fork build found for this PR'; exit 1; }
-          echo "Using successful fork build $RUN_ID"
+            if [ -n "$RUN_INFO" ]; then
+              RUN_ID=$(printf '%s' "$RUN_INFO" | jq -r '.databaseId')
+              STATUS=$(printf '%s' "$RUN_INFO" | jq -r '.status')
+              CONCLUSION=$(printf '%s' "$RUN_INFO" | jq -r '.conclusion // empty')
+              echo "Build $RUN_ID status=$STATUS conclusion=${CONCLUSION:-pending}"
+
+              if [ "$STATUS" = "completed" ]; then
+                if [ "$CONCLUSION" = "success" ]; then
+                  BUILD_SUCCEEDED=true
+                  break
+                fi
+                echo "Latest fork build did not succeed: $CONCLUSION"
+                exit 1
+              fi
+            else
+              echo "No fork build found yet for $EXPECTED_SHA"
+            fi
+
+            echo 'Build is not finished; polling again in 5 minutes'
+            sleep 300
+          done
+
+          test "$BUILD_SUCCEEDED" = true || {
+            echo 'Timed out waiting for the latest fork build'
+            exit 1
+          }
+          echo "Using fork build $RUN_ID for PR tip $EXPECTED_SHA"
           gh run download "$RUN_ID" --dir downloaded-artifact
           APK=$(find downloaded-artifact -type f -name '*.apk' | head -n 1)
           test -n "$APK" || { echo 'APK not found in build artifact'; exit 1; }
