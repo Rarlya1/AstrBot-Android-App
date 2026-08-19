@@ -110,7 +110,13 @@ class Buffer {
     codePoint = charset.translate(codePoint);
 
     final cellWidth = unicodeV11.wcwidth(codePoint);
-    if (_cursorX >= terminal.viewWidth) {
+    // A wide character must occupy two complete cells. Do not place it in
+    // the last cell of a line, otherwise the continuation cell is written
+    // past the viewport and the glyph is painted outside the terminal.
+    if (_cursorX >= terminal.viewWidth ||
+        (terminal.autoWrapMode &&
+            cellWidth == 2 &&
+            _cursorX == terminal.viewWidth - 1)) {
       index();
       setCursorX(0);
       if (terminal.autoWrapMode) {
