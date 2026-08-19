@@ -15,7 +15,7 @@ def proot_fix() -> None:
     if not os.path.exists(target_file):
         print(f"[proot_fix] 目标文件不存在: {target_file}")
         return
-    
+
     try:
         with open(target_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -39,10 +39,10 @@ def proot_fix() -> None:
             r'\1    subprocess.Popen([executable, *argv[1:]], close_fds=True)\n'
             r'\1    os._exit(0)\n'
             r'\1else:\n'
-            r'\1    os.execv(executable, argv)'
+            r'\1    os.execv(executable, argv)\n'
         )
 
-        new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+        new_content, count = re.subn(pattern, replacement, content, flags=re.MULTILINE)
 
         with open(target_file, 'w', encoding='utf-8') as f:
             f.write(new_content)
@@ -54,3 +54,38 @@ def proot_fix() -> None:
 
     except Exception as e:
         print(f"[proot_fix] ❌ 修复失败: {e}")
+
+
+
+    """
+    同时修改 python 日志级别。
+    避免输出大量来自 python 模块的 debug 日志到终端。
+    """
+    target_file2 = "/root/AstrBot/astrbot/core/log.py"
+    try:
+        with open(target_file2, 'r', encoding='utf-8') as f:
+            content2 = f.read()
+
+        # 检查是否已修复
+        if not 'level="DEBUG"' in content2:
+            print("[proot_fix] python 日志级别已修改，跳过")
+            return
+
+        print("[proot_fix] 正在修改 python 日志级别...")
+
+        # 2. 替换日志配置部分
+        pattern2 = r'(level=")DEBUG(")'
+        replacement2 = r'\1INFO\2'
+
+        new_content2, count2 = re.subn(pattern2, replacement2, content2, flags=re.MULTILINE)
+
+        with open(target_file2, 'w', encoding='utf-8') as f:
+            f.write(new_content2)
+
+        if count2 < 1:
+            print(f"[proot_fix] ❌ 日志级别修改失败: 匹配数量为 {count}")
+            return
+        print("[proot_fix] ✅ 日志级别修改完成")
+
+    except Exception as e:
+        print(f"[proot_fix] ❌ 日志级别修改失败: {e}")

@@ -100,18 +100,20 @@ jobs:
           separators = r"\s，,、；;：:|/／\\"
           label = re.compile(rf"(?:^|[{separators}])(?P<label>{'|'.join(categories)})(?=[{separators}]|$)")
           trim = re.compile(rf"^[{separators}]+|[{separators}]+$")
-          subjects = subprocess.check_output(["git", "log", "--reverse", "--pretty=format:%s", log_range], text=True).splitlines()
-          for subject in subjects:
+          commits = subprocess.check_output(["git", "log", "--reverse", "--pretty=format:%H%x09%s", log_range], text=True).splitlines()
+          for commit in commits:
+              commit_sha, subject = commit.split("\t", 1)
+              short_sha = commit_sha[:7]
               if subject.startswith("Merge pull request"): continue
               matches = list(label.finditer(subject))
               if not matches:
-                  with open(f"{notes_dir}/其他", "a", encoding="utf-8") as f: f.write(f"- {subject}\n")
+                  with open(f"{notes_dir}/其他", "a", encoding="utf-8") as f: f.write(f"- {subject} ({short_sha})\n")
                   continue
               for i, match in enumerate(matches):
                   end = matches[i + 1].start() if i + 1 < len(matches) else len(subject)
                   content = trim.sub("", subject[match.end():end]).strip()
                   if content:
-                      with open(f"{notes_dir}/{match.group('label')}", "a", encoding="utf-8") as f: f.write(f"- {content}\n")
+                      with open(f"{notes_dir}/{match.group('label')}", "a", encoding="utf-8") as f: f.write(f"- {content} ({short_sha})\n")
           PY
 
           : > release-notes.md
