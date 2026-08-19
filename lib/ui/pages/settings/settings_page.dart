@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -141,22 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       Map<String, dynamic>? releaseData;
 
-      for (final mirror in mirrors) {
-        try {
-          final response = await http.get(
-            Uri.parse(mirror),
-            headers: {'Accept': 'application/vnd.github.v3+json'},
-          ).timeout(const Duration(seconds: 10));
-
-          if (response.statusCode == 200) {
-            releaseData = jsonDecode(response.body) as Map<String, dynamic>;
-            break;
-          }
-        } catch (e) {
-          Log.w('镜像源 $mirror 请求失败: $e', tag: 'AstrBot');
-          continue;
-        }
-      }
+      releaseData = await _fetchFirstReleaseData(mirrors);
 
       if (Get.isDialogOpen == true) {
         Get.back(); // 关闭加载提示
@@ -203,6 +189,57 @@ class _SettingsPageState extends State<SettingsPage> {
         colorText: Colors.white,
       );
     }
+  }
+
+  Future<Map<String, dynamic>?> _fetchFirstReleaseData(
+    List<String> mirrors,
+  ) async {
+    final client = http.Client();
+    final completer = Completer<Map<String, dynamic>?>();
+    var pending = mirrors.length;
+
+    void finish(Map<String, dynamic>? data) {
+      if (!completer.isCompleted) {
+        completer.complete(data);
+        client.close();
+      }
+    }
+
+    for (final mirror in mirrors) {
+      () async {
+        try {
+          final data = await _fetchReleaseData(client, mirror);
+          Log.i('更新镜像源响应成功: $mirror', tag: 'AstrBot');
+          finish(data);
+        } catch (error) {
+          Log.w('镜像源 $mirror 请求失败: $error', tag: 'AstrBot');
+          pending--;
+          if (pending == 0) finish(null);
+        }
+      }();
+    }
+
+    return completer.future;
+  }
+
+  Future<Map<String, dynamic>> _fetchReleaseData(
+    http.Client client,
+    String mirror,
+  ) async {
+    final response = await client.get(
+      Uri.parse(mirror),
+      headers: {'Accept': 'application/vnd.github.v3+json'},
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw HttpException('HTTP ${response.statusCode}');
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('更新接口返回的数据格式无效');
+    }
+    return data;
   }
 
   // 版本号比较
