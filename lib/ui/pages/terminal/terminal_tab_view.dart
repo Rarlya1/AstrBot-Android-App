@@ -21,12 +21,53 @@ class _TerminalTabViewState extends State<TerminalTabView> {
   final HomeController homeController = Get.find<HomeController>();
   bool _isCopyDialogOpen = false;
   final Map<int, Offset> _terminalPointers = <int, Offset>{};
+  final Map<TerminalTab, ScrollController> _terminalScrollControllers =
+      <TerminalTab, ScrollController>{};
   double? _pinchStartDistance;
   double? _pinchStartFontSize;
   bool _isPinching = false;
 
   static const double _fontSizeStep = 0.2;
   static const double _distancePerFontSizeStep = 24.0;
+
+  ScrollController _scrollControllerFor(TerminalTab tab) {
+    return _terminalScrollControllers.putIfAbsent(
+      tab,
+      () => ScrollController(),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _terminalScrollControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _setTerminalFontSize(TerminalTab tab, double size) {
+    final scrollController = _scrollControllerFor(tab);
+    final oldFontSize = homeController.terminalFontSize.value;
+    final wasAtBottom = scrollController.hasClients &&
+        scrollController.position.pixels >=
+            scrollController.position.maxScrollExtent - 1;
+    final oldOffset = scrollController.hasClients
+        ? scrollController.position.pixels
+        : 0.0;
+
+    homeController.setTerminalFontSize(size);
+    final newFontSize = homeController.terminalFontSize.value;
+    if (!scrollController.hasClients || oldFontSize == newFontSize) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scrollController.hasClients) return;
+      final maxScrollExtent = scrollController.position.maxScrollExtent;
+      final newOffset = wasAtBottom
+          ? maxScrollExtent
+          : oldOffset * newFontSize / oldFontSize;
+      scrollController.jumpTo(newOffset.clamp(0.0, maxScrollExtent));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +253,8 @@ class _TerminalTabViewState extends State<TerminalTabView> {
               final distance = (points[0] - points[1]).distance;
               final distanceDelta = distance - _pinchStartDistance!;
               final sizeDelta = (distanceDelta / _distancePerFontSizeStep).round() * _fontSizeStep;
-              homeController.setTerminalFontSize(
+              _setTerminalFontSize(
+                tab,
                 _pinchStartFontSize! + sizeDelta,
               );
             },
@@ -238,6 +280,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                 readOnly: tab.type == TerminalTabType.fixed,
                 backgroundOpacity: 1,
                 theme: ManjaroTerminalTheme(),
+                scrollController: _scrollControllerFor(tab),
                 textStyle: TerminalStyle(fontSize: homeController.terminalFontSize.value),
               ),
             ),
