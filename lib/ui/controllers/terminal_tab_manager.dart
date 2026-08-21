@@ -152,7 +152,7 @@ class TerminalTabManager extends GetxController {
             final normalizedCommand = customCommand
                 ?.split(RegExp(r'\r?\n'))
                 ?.where((line) => line.trim().isNotEmpty)
-                ?.map((line) => '$line\n')
+                ?.map((line) => ' $line\n')
                 ?.join() ?? '';
             newPty.writeString('$normalizedCommand\n');
             commandSent = true;
