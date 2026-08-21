@@ -249,6 +249,34 @@ class HomeController extends GetxController {
 
   // 检查条件是否满足，如果满足则触发跳转
   void _checkAndNavigateToWebview() {
+
+    if (!_isNapCatLogin && !_isNapCatQuickLogin) {
+      Get.snackbar(
+        'NapCat 未登录',
+        '请前往 NapCat 终端页或 WebUI 自行扫码登录',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+    } else if (!_isNapCatLogin && _isNapCatQuickLogin) {
+      Get.snackbar(
+        'NapCat 未配置快速登录',
+        '请前往设置页配置快速登录QQ账号设置',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.yellow.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+      _isNapCatLogin = true; // 视为已登录，防止重复触发
+    }
+
+    // 新建终端页并运行自定义启动命令
+    final command = getCustomStartupCommand();
+    if (command.trim().isNotEmpty) {
+      terminalTabManager.addSystemTerminalTab(command);
+    }
+
     // 只有当条件满足且应用在前台时才跳转
     if (isLocalhostDetected.value &&
         _isAppInForeground &&
@@ -257,33 +285,6 @@ class HomeController extends GetxController {
         // 使用路由跳转
         Get.toNamed(AppRoutes.webview);
         webviewHasOpen = true; // 只有真正打开webview时才设置为true
-        if (!_isNapCatLogin && !_isNapCatQuickLogin) {
-          Get.snackbar(
-            'NapCat 未登录',
-            '请前往 NapCat 终端页或 WebUI 自行扫码登录',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.withValues(alpha: 0.8),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 5),
-          );
-        } else if (!_isNapCatLogin && _isNapCatQuickLogin) {
-          Get.snackbar(
-            'NapCat 未配置快速登录',
-            '请前往设置页配置快速登录QQ账号设置',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.yellow.withValues(alpha: 0.8),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 5),
-          );
-          _isNapCatLogin = true; // 视为已登录，防止重复触发
-        }
-
-        // 新建终端页并运行自定义启动命令
-        final command = getCustomStartupCommand();
-        if (command.trim().isNotEmpty) {
-          terminalTabManager.addSystemTerminalTab(command);
-        }
-
       });
     }
   }
@@ -313,7 +314,8 @@ class HomeController extends GetxController {
         isLocalhostDetected.value = true;
         bumpProgress();
 
-        // 检查是否两个条件都满足
+        // 检查是否条件满足
+        // 现在的实际功能为检查napcat登录状态和新建终端运行自定义启动命令
         _checkAndNavigateToWebview();
 
         Future.delayed(const Duration(milliseconds: 2000), () {
