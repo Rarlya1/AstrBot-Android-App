@@ -29,6 +29,7 @@ class HomeController extends GetxController {
   SettingNode privacySetting = 'privacy'.setting;
   SettingNode napCatWebUiEnabled = 'napcat_webui_enabled'.setting;
   SettingNode showTerminalWhiteText = 'show_terminal_white_text'.setting;
+  SettingNode customStartupCommand = 'custom_startup_command'.setting;
   Pty? pseudoTerminal;
   Pty? napcatTerminal;
 
@@ -71,6 +72,10 @@ class HomeController extends GetxController {
 
   void setTerminalFontSize(double size) {
     terminalFontSize.value = size.clamp(minTerminalFontSize, maxTerminalFontSize).toDouble();
+  }
+
+  String getCustomStartupCommand() {
+    return customStartupCommand.get() as String? ?? '';
   }
 
   // 进度 +1
@@ -439,6 +444,11 @@ class HomeController extends GetxController {
         // 当进度到达 "Napcat 已安装" 时，启动 NapCat 终端
         if (content.contains('Napcat ${S.current.installed}')) {
           napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "cd /root/Napcat; exec bash launcher.sh"\n');
+          // 新建终端页并运行自定义启动命令
+          final command = getCustomStartupCommand();
+          if (command.trim().isNotEmpty) {
+            terminalTabManager.addSystemTerminalTab(command);
+          }
           bumpProgress();
           Log.i('检测到 Napcat 已安装，启动 NapCat 终端', tag: 'AstrBot');
         }
@@ -449,7 +459,7 @@ class HomeController extends GetxController {
           // 清除终端先前显示的所有文本
           terminal.buffer.clear();
           terminal.buffer.setCursor(0, 0);
-          Log.i('检测到 AstrBot 配置中，清除终端内容并开始过滤非彩色终端输出', tag: 'AstrBot');
+          Log.i('检测到 AstrBot 配置中，清除终端内容', tag: 'AstrBot');
         }
 
         update();

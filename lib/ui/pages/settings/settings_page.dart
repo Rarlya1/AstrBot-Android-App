@@ -973,6 +973,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   hintText: '留空使用默认逻辑',
                   border: OutlineInputBorder(),
                 ),
+                minLines: 1,
                 maxLines: 3,
                 keyboardType: TextInputType.multiline,
               ),
@@ -1026,6 +1027,66 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     }
 
+    commandController.dispose();
+  }
+
+  Future<void> _showCustomStartupCommandDialog() async {
+    final currentCommand =
+        homeController.customStartupCommand.get() as String? ?? '';
+    final commandController = TextEditingController(text: currentCommand);
+    final result = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('自定义启动命令'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '自动打开新终端并执行任意启动命令',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '示例：\ncd /root/AstrBot\npython main.py &',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: commandController,
+                decoration: const InputDecoration(
+                  labelText: '自定义启动命令',
+                  hintText: '留空则不执行',
+                  border: OutlineInputBorder(),
+                ),
+                minLines: 1,
+                maxLines: 6,
+                keyboardType: TextInputType.multiline,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      final command = commandController.text.trim();
+      homeController.customStartupCommand.set(command);
+      Get.snackbar(
+        '保存成功',
+        command.isEmpty ? '已清除自定义启动命令' : '自定义启动命令已保存',
+      );
+    }
     commandController.dispose();
   }
 
@@ -1688,6 +1749,12 @@ class _SettingsPageState extends State<SettingsPage> {
           title: const Text('自定义 Git Clone 命令'),
           subtitle: const Text('自定义 AstrBot 的获取方式'),
           onTap: () => _showCustomGitCloneDialog(),
+        ),
+        ListTile(
+          leading: const Icon(Icons.terminal),
+          title: const Text('自定义启动命令'),
+          subtitle: const Text('自动打开新终端并执行任意启动命令'),
+          onTap: () => _showCustomStartupCommandDialog(),
         ),
         ListTile(
           leading: const Icon(Icons.text_fields),

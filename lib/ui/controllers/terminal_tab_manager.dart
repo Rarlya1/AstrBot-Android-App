@@ -77,7 +77,7 @@ class TerminalTabManager extends GetxController {
   }
 
   /// 添加新的系统终端标签页
-  Future<void> addSystemTerminalTab() async {
+  Future<void> addSystemTerminalTab([String? customCommand]) async {
     try {
       final newIndex =
           tabs.where((t) => t.type == TerminalTabType.system).length + 1;
@@ -96,6 +96,9 @@ class TerminalTabManager extends GetxController {
 
       // 标志：是否已经创建了标签页
       var tabCreated = false;
+
+     // 标志：是否已发送自定义启动命令
+      var commandSent = false;
 
       // 连接终端的 onResize 和 onOutput 事件（需要在监听输出前就连接好）
       newTerminal.onResize = (width, height, pixelWidth, pixelHeight) {
@@ -142,6 +145,19 @@ class TerminalTabManager extends GetxController {
 
         // 标签页创建后，正常输出所有内容
         if (tabCreated) {
+
+          // 如果未发送自定义启动命令并且有设置自定义启动命令
+          // 就向终端发送格式化后的自定义启动命令
+          if (!commandSent && customCommand != null) {
+            final normalizedCommand = customCommand
+                ?.split(RegExp(r'\r?\n'))
+                ?.where((line) => line.trim().isNotEmpty)
+                ?.map((line) => '$line\n')
+                ?.join() ?? '';
+            newPty.writeString('$normalizedCommand\n');
+            commandSent = true;
+          }
+
           // 自动清理旧行，避免行数满后不更新
           while (newTerminal.buffer.lines.length >= newTerminal.maxLines) {
             newTerminal.buffer.lines.remove(0, 1);
@@ -153,7 +169,7 @@ class TerminalTabManager extends GetxController {
 
       // 登录到ubuntu容器
       final command =
-          'source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "exec bash -il" \n';
+          'source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "exec bash -il"\n';
       newPty.writeString(command);
     } catch (e) {
       Log.e('添加系统终端标签页失败: $e', tag: 'TerminalTabManager');
