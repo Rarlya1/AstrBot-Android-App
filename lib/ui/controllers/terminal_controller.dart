@@ -29,6 +29,7 @@ class HomeController extends GetxController {
   SettingNode privacySetting = 'privacy'.setting;
   SettingNode napCatWebUiEnabled = 'napcat_webui_enabled'.setting;
   SettingNode showTerminalWhiteText = 'show_terminal_white_text'.setting;
+  SettingNode customStartupCommand = 'custom_startup_command'.setting;
   Pty? pseudoTerminal;
   Pty? napcatTerminal;
 
@@ -71,6 +72,10 @@ class HomeController extends GetxController {
 
   void setTerminalFontSize(double size) {
     terminalFontSize.value = size.clamp(minTerminalFontSize, maxTerminalFontSize).toDouble();
+  }
+
+  String getCustomStartupCommand() {
+    return customStartupCommand.get() as String? ?? '';
   }
 
   // 进度 +1
@@ -244,6 +249,34 @@ class HomeController extends GetxController {
 
   // 检查条件是否满足，如果满足则触发跳转
   void _checkAndNavigateToWebview() {
+
+    if (!_isNapCatLogin && !_isNapCatQuickLogin) {
+      Get.snackbar(
+        'NapCat 未登录',
+        '请前往 NapCat 终端页或 WebUI 自行扫码登录',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+    } else if (!_isNapCatLogin && _isNapCatQuickLogin) {
+      Get.snackbar(
+        'NapCat 未配置快速登录',
+        '请前往设置页配置快速登录QQ账号设置',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.yellow.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+      _isNapCatLogin = true; // 视为已登录，防止重复触发
+    }
+
+    // 新建终端页并运行自定义启动命令
+    final command = getCustomStartupCommand();
+    if (command.trim().isNotEmpty) {
+      terminalTabManager.addSystemTerminalTab(command);
+    }
+
     // 只有当条件满足且应用在前台时才跳转
     if (isLocalhostDetected.value &&
         _isAppInForeground &&
@@ -252,26 +285,6 @@ class HomeController extends GetxController {
         // 使用路由跳转
         Get.toNamed(AppRoutes.webview);
         webviewHasOpen = true; // 只有真正打开webview时才设置为true
-        if (!_isNapCatLogin && !_isNapCatQuickLogin) {
-          Get.snackbar(
-            'NapCat 未登录',
-            '请前往 NapCat 终端页或 WebUI 自行扫码登录',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.withValues(alpha: 0.8),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 5),
-          );
-        } else if (!_isNapCatLogin && _isNapCatQuickLogin) {
-          Get.snackbar(
-            'NapCat 未配置快速登录',
-            '请前往设置页配置快速登录QQ账号设置',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.yellow.withValues(alpha: 0.8),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 5),
-          );
-          _isNapCatLogin = true; // 视为已登录，防止重复触发
-        }
       });
     }
   }
@@ -301,7 +314,8 @@ class HomeController extends GetxController {
         isLocalhostDetected.value = true;
         bumpProgress();
 
-        // 检查是否两个条件都满足
+        // 检查是否条件满足
+        // 现在的实际功能为检查napcat登录状态和新建终端运行自定义启动命令
         _checkAndNavigateToWebview();
 
         Future.delayed(const Duration(milliseconds: 2000), () {
@@ -449,7 +463,7 @@ class HomeController extends GetxController {
           // 清除终端先前显示的所有文本
           terminal.buffer.clear();
           terminal.buffer.setCursor(0, 0);
-          Log.i('检测到 AstrBot 配置中，清除终端内容并开始过滤非彩色终端输出', tag: 'AstrBot');
+          Log.i('检测到 AstrBot 配置中，清除终端内容', tag: 'AstrBot');
         }
 
         update();
