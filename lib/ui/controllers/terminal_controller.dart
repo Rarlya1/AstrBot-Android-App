@@ -277,6 +277,13 @@ class HomeController extends GetxController {
           );
           _isNapCatLogin = true; // 视为已登录，防止重复触发
         }
+
+        // 新建终端页并运行自定义启动命令
+        final command = getCustomStartupCommand();
+        if (command.trim().isNotEmpty) {
+          terminalTabManager.addSystemTerminalTab(command);
+        }
+
       });
     }
   }
@@ -444,11 +451,6 @@ class HomeController extends GetxController {
         // 当进度到达 "Napcat 已安装" 时，启动 NapCat 终端
         if (content.contains('Napcat ${S.current.installed}')) {
           napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "cd /root/Napcat; exec bash launcher.sh"\n');
-          // 新建终端页并运行自定义启动命令
-          final command = getCustomStartupCommand();
-          if (command.trim().isNotEmpty) {
-            terminalTabManager.addSystemTerminalTab(command);
-          }
           bumpProgress();
           Log.i('检测到 Napcat 已安装，启动 NapCat 终端', tag: 'AstrBot');
         }

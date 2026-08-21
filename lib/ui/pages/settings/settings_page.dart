@@ -1085,6 +1085,8 @@ class _SettingsPageState extends State<SettingsPage> {
       Get.snackbar(
         '保存成功',
         command.isEmpty ? '已清除自定义启动命令' : '自定义启动命令已保存',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
       );
     }
     commandController.dispose();
