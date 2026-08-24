@@ -721,13 +721,8 @@ class HomeController extends GetxController {
     showTerminalWhiteTextRx.value = value;
   }
 
-  /// 写入终端并自动清理旧行，避免行数满后不更新
+  /// 写入终端
   void _writeWithTrim(Terminal t, String data) {
-    try {
-      while (t.buffer.lines.length >= t.maxLines) {
-        t.buffer.lines.remove(0, 1);
-      }
-    } catch (_) {}
     t.write(data);
   }
 

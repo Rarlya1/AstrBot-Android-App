@@ -158,10 +158,7 @@ class TerminalTabManager extends GetxController {
             commandSent = true;
           }
 
-          // 自动清理旧行，避免行数满后不更新
-          while (newTerminal.buffer.lines.length >= newTerminal.maxLines) {
-            newTerminal.buffer.lines.remove(0, 1);
-          }
+          // 写入终端
           newTerminal.write(event);
         }
         // 标签页创建前，不输出任何内容（跳过登录过程的输出）
