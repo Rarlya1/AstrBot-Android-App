@@ -249,34 +249,6 @@ class HomeController extends GetxController {
 
   // 检查条件是否满足，如果满足则触发跳转
   void _checkAndNavigateToWebview() {
-
-    if (!_isNapCatLogin && !_isNapCatQuickLogin) {
-      Get.snackbar(
-        'NapCat 未登录',
-        '请前往 NapCat 终端页或 WebUI 自行扫码登录',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-      );
-    } else if (!_isNapCatLogin && _isNapCatQuickLogin) {
-      Get.snackbar(
-        'NapCat 未配置快速登录',
-        '请前往设置页配置快速登录QQ账号设置',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.yellow.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-      );
-      _isNapCatLogin = true; // 视为已登录，防止重复触发
-    }
-
-    // 新建终端页并运行自定义启动命令
-    final command = getCustomStartupCommand();
-    if (command.trim().isNotEmpty) {
-      terminalTabManager.addSystemTerminalTab(command);
-    }
-
     // 只有当条件满足且应用在前台时才跳转
     if (isLocalhostDetected.value &&
         _isAppInForeground &&
@@ -284,6 +256,34 @@ class HomeController extends GetxController {
       Future.microtask(() {
         // 使用路由跳转
         Get.toNamed(AppRoutes.webview);
+
+        if (!_isNapCatLogin && !_isNapCatQuickLogin) {
+          Get.snackbar(
+            'NapCat 未登录',
+            '请前往 NapCat 终端页或 WebUI 自行扫码登录',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+        } else if (!_isNapCatLogin && _isNapCatQuickLogin) {
+          Get.snackbar(
+            'NapCat 未配置快速登录',
+            '请前往设置页配置快速登录QQ账号设置',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+          _isNapCatLogin = true; // 视为已登录，防止重复触发
+        }
+
+        // 新建终端页并运行自定义启动命令
+        final command = getCustomStartupCommand();
+        if (command.trim().isNotEmpty) {
+          terminalTabManager.addSystemTerminalTab(command);
+        }
+
         webviewHasOpen = true; // 只有真正打开webview时才设置为true
       });
     }
@@ -619,7 +619,6 @@ class HomeController extends GetxController {
       final dataDir = Directory('${scripts.ubuntuPath}/root/AstrBot/data');
       if (await dataDir.exists()) {
         // 已安装，直接跳转
-        webviewHasOpen = true;
         Get.toNamed(AppRoutes.webview);
       } else {
         Get.snackbar(
@@ -722,13 +721,8 @@ class HomeController extends GetxController {
     showTerminalWhiteTextRx.value = value;
   }
 
-  /// 写入终端并自动清理旧行，避免行数满后不更新
+  /// 写入终端
   void _writeWithTrim(Terminal t, String data) {
-    try {
-      while (t.buffer.lines.length >= t.maxLines) {
-        t.buffer.lines.remove(0, 1);
-      }
-    } catch (_) {}
     t.write(data);
   }
 
