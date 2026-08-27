@@ -46,7 +46,7 @@ class TerminalTabManager extends GetxController {
   final RxInt activeTabIndex = 0.obs;
 
   /// 初始化固定的AstrBot终端标签页
-  void initializeFixedTab(Terminal terminal, {Terminal? napcatTerminal}) {
+  void initializeFixedTab(Terminal astrbotTerminal, Terminal napcatTerminal) {
     // 清空现有标签页
     tabs.clear();
 
@@ -55,8 +55,8 @@ class TerminalTabManager extends GetxController {
       id: 'fixed_astrbot',
       title: 'AstrBot',
       type: TerminalTabType.fixed,
-      terminal: terminal,
-      pty: null, // 固定终端使用外部管理的 pseudoTerminal
+      terminal: astrbotTerminal,
+      pty: null, // 固定终端使用外部管理的 AstrBot PTY
       isActive: true,
     );
 
@@ -64,16 +64,14 @@ class TerminalTabManager extends GetxController {
     activeTabIndex.value = 0;
 
     // 添加NapCat标签页
-    if (napcatTerminal != null && !tabs.any((t) => t.id == 'fixed_napcat')) {
-      tabs.add(TerminalTab(
-        id: 'fixed_napcat',
-        title: 'NapCat',
-        type: TerminalTabType.fixed,
-        terminal: napcatTerminal,
-        pty: null,
-        isActive: false,
-      ));
-    }
+    tabs.add(TerminalTab(
+      id: 'fixed_napcat',
+      title: 'NapCat',
+      type: TerminalTabType.fixed,
+      terminal: napcatTerminal,
+      pty: null,
+      isActive: false,
+    ));
   }
 
   /// 添加新的系统终端标签页

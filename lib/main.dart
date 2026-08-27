@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,7 +9,9 @@ import 'package:settings/settings.dart';
 import 'dart:async';
 
 import 'generated/l10n.dart';
+import 'core/constants/scripts.dart' as scripts;
 import 'core/services/foreground_service.dart';
+import 'ui/controllers/terminal_controller.dart';
 import 'ui/routes/app_routes.dart';
 
 // Notice: behavior will submit Device
@@ -139,8 +143,11 @@ class _AstrBotState extends State<AstrBot> with WidgetsBindingObserver {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: S.delegate.supportedLocales,
+      initialBinding: HomeControllerBinding(),
       // 使用路由管理
-      initialRoute: AppRoutes.terminal,
+      initialRoute: Directory('${scripts.ubuntuPath}/root/AstrBot/data').existsSync()
+          ? AppRoutes.webview
+          : AppRoutes.terminal,
       getPages: AppRoutes.routes,
     );
   }

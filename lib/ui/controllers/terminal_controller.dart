@@ -30,8 +30,8 @@ class HomeController extends GetxController {
   SettingNode napCatWebUiEnabled = 'napcat_webui_enabled'.setting;
   SettingNode showTerminalWhiteText = 'show_terminal_white_text'.setting;
   SettingNode customStartupCommand = 'custom_startup_command'.setting;
-  Pty? pseudoTerminal;
-  Pty? napcatTerminal;
+  Pty? astrbotPty;
+  Pty? napcatPty;
 
   final RxString napCatWebUiToken = ''.obs; // 存储 NapCat WebUI Token
   final RxBool napCatWebUiEnabledRx = false.obs; // GetX 响应式变量用于导航栏更新
@@ -44,16 +44,16 @@ class HomeController extends GetxController {
   StreamSubscription? _napcatSubscription;
   StreamSubscription? _webviewSubscription; // 添加webview监听订阅
 
-  late Terminal terminal = Terminal(
+  late Terminal astrbotTerminal = Terminal(
     maxLines: 4096,
     onResize: (width, height, pixelWidth, pixelHeight) {
-      pseudoTerminal?.resize(height, width);
+      astrbotPty?.resize(height, width);
     },
     onOutput: (data) {
-      pseudoTerminal?.writeString(data);
+      astrbotPty?.writeString(data);
     },
   );
-  late Terminal napcatTerminalView = Terminal(
+  late Terminal napcatTerminal = Terminal(
     maxLines: 4096,
   );
   bool webviewHasOpen = false;
@@ -240,7 +240,7 @@ class HomeController extends GetxController {
         hasReset) {
       // 只有当输出是纯彩色的（不包含白色文本）时才输出
       if (isPurelyColored) {
-        _writeWithTrim(terminal, _pendingOutput);
+        _writeWithTrim(astrbotTerminal, _pendingOutput);
       }
       // 清空缓冲
       _pendingOutput = '';
@@ -254,8 +254,10 @@ class HomeController extends GetxController {
         _isAppInForeground &&
         !webviewHasOpen) {
       Future.microtask(() {
-        // 使用路由跳转
-        Get.toNamed(AppRoutes.webview);
+        // 安装页只负责加载，AstrBot 就绪后替换掉安装页。
+        if (Get.currentRoute == AppRoutes.terminal) {
+          Get.offNamed(AppRoutes.webview);
+        }
 
         if (!_isNapCatLogin && !_isNapCatQuickLogin) {
           Get.snackbar(
@@ -284,16 +286,16 @@ class HomeController extends GetxController {
           terminalTabManager.addSystemTerminalTab(command);
         }
 
-        webviewHasOpen = true; // 只有真正打开webview时才设置为true
+        webviewHasOpen = true;
       });
     }
   }
 
   // 监听输出，当输出中包含启动成功的标志时，启动 VewView 和导航栏页面
   void initWebviewListener() {
-    if (pseudoTerminal == null) return;
+    if (astrbotPty == null) return;
 
-    _webviewSubscription = pseudoTerminal!.output
+    _webviewSubscription = astrbotPty!.output
         .cast<List<int>>()
         .transform(const Utf8Decoder(allowMalformed: true))
         .listen((event) async {
@@ -332,15 +334,15 @@ class HomeController extends GetxController {
         _processColoredOutput(event);
       } else {
         // 配置前显示所有输出
-        _writeWithTrim(terminal, event);
+        _writeWithTrim(astrbotTerminal, event);
       }
     });
   }
 
   void initNapcatListener() {
-    if (napcatTerminal == null) return;
+    if (napcatPty == null) return;
 
-    _napcatSubscription = napcatTerminal!.output
+    _napcatSubscription = napcatPty!.output
         .cast<List<int>>()
         .transform(const Utf8Decoder(allowMalformed: true))
         .listen((event) async {
@@ -377,7 +379,7 @@ class HomeController extends GetxController {
       }
 
       // 写入 NapCat 终端视图
-      _writeWithTrim(napcatTerminalView, event);
+      _writeWithTrim(napcatTerminal, event);
 
     });
   }
@@ -452,7 +454,7 @@ class HomeController extends GetxController {
 
         // 当进度到达 "Napcat 已安装" 时，启动 NapCat 终端
         if (content.contains('Napcat ${S.current.installed}')) {
-          napcatTerminal?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "cd /root/Napcat; exec bash launcher.sh"\n');
+          napcatPty?.writeString('source ${RuntimeEnvir.homePath}/common.sh\nlogin_ubuntu "cd /root/Napcat; exec bash launcher.sh"\n');
           bumpProgress();
           Log.i('检测到 Napcat 已安装，启动 NapCat 终端', tag: 'AstrBot');
         }
@@ -461,8 +463,8 @@ class HomeController extends GetxController {
         if (content.trim() == 'AstrBot 配置中') {
           _isAstrBotConfiguring = true;
           // 清除终端先前显示的所有文本
-          terminal.buffer.clear();
-          terminal.buffer.setCursor(0, 0);
+          astrbotTerminal.buffer.clear();
+          astrbotTerminal.buffer.setCursor(0, 0);
           Log.i('检测到 AstrBot 配置中，清除终端内容', tag: 'AstrBot');
         }
 
@@ -527,7 +529,7 @@ class HomeController extends GetxController {
 
   void setProgress(String description) {
     currentProgress.value = description;
-    terminal.writeProgress(currentProgress.value);
+    astrbotTerminal.writeProgress(currentProgress.value);
   }
 
   Future<void> loadAstrBot() async {
@@ -542,9 +544,9 @@ class HomeController extends GetxController {
     createBusyboxLink();
 
     // 创建终端
-    pseudoTerminal =
-        createPTY(rows: terminal.viewHeight, columns: terminal.viewWidth);
-    napcatTerminal = createPTY();
+    astrbotPty =
+        createPTY(rows: astrbotTerminal.viewHeight, columns: astrbotTerminal.viewWidth);
+    napcatPty = createPTY();
 
     // 复制必要的文件
     setProgress('复制 Ubuntu 系统镜像...');
@@ -578,12 +580,12 @@ class HomeController extends GetxController {
 
     initNapcatListener();
 
-    startAstrBot(pseudoTerminal!);
+    startAstrBot(astrbotPty!);
   }
 
-  Future<void> startAstrBot(Pty pseudoTerminal) async {
+  Future<void> startAstrBot(Pty astrbotPty) async {
     setProgress('开始安装 AstrBot...');
-    pseudoTerminal.writeString(
+    astrbotPty.writeString(
         'source ${RuntimeEnvir.homePath}/common.sh\nstart_astrbot\n');
   }
 
@@ -593,6 +595,10 @@ class HomeController extends GetxController {
 
     // 初始化终端标签页管理器
     terminalTabManager = TerminalTabManager();
+    terminalTabManager.initializeFixedTab(
+      astrbotTerminal,
+      napcatTerminal,
+    );
 
     // 初始化 NapCat WebUI 启用状态
     napCatWebUiEnabledRx.value = napCatWebUiEnabled.get() ?? false;
@@ -617,10 +623,7 @@ class HomeController extends GetxController {
 
       // 检查是否已安装 AstrBot
       final dataDir = Directory('${scripts.ubuntuPath}/root/AstrBot/data');
-      if (await dataDir.exists()) {
-        // 已安装，直接跳转
-        Get.toNamed(AppRoutes.webview);
-      } else {
+      if (!await dataDir.exists()) {
         Get.snackbar(
           '温馨提示',
           '点击任意位置可显示安装过程',
@@ -629,15 +632,8 @@ class HomeController extends GetxController {
         );
       }
 
-      // 加载并启动 AstrBot
+      // 已安装时由 initialRoute 直接进入主界面，但 AstrBot 仍需由控制器启动。
       loadAstrBot();
-
-      // 在终端创建完成后初始化固定标签页
-      // 等待terminal创建完成
-      Future.delayed(const Duration(milliseconds: 500), () {
-        terminalTabManager.initializeFixedTab(terminal,
-          napcatTerminal: napcatTerminalView);
-      });
     });
 
     // 监听应用生命周期状态变化
@@ -736,15 +732,15 @@ class HomeController extends GetxController {
 
     // 杀死所有终端进程，释放端口
     try {
-      if (pseudoTerminal != null) {
+      if (astrbotPty != null) {
         Log.i('正在关闭主终端进程...', tag: 'AstrBot');
-        pseudoTerminal?.kill();
-        pseudoTerminal = null;
+        astrbotPty?.kill();
+        astrbotPty = null;
       }
-      if (napcatTerminal != null) {
+      if (napcatPty != null) {
         Log.i('正在关闭 NapCat 终端进程...', tag: 'AstrBot-Napcat');
-        napcatTerminal?.kill();
-        napcatTerminal = null;
+        napcatPty?.kill();
+        napcatPty = null;
       }
     } catch (e) {
       Log.e('关闭终端进程时出错: $e', tag: 'AstrBot');
@@ -758,6 +754,14 @@ class HomeController extends GetxController {
       ),
     );
     super.onClose();
+  }
+}
+
+/// 应用级 HomeController 注册入口。
+class HomeControllerBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<HomeController>(HomeController(), permanent: true);
   }
 }
 
