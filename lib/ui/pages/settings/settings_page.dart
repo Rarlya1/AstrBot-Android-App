@@ -35,6 +35,13 @@ class _SettingsPageState extends State<SettingsPage> {
   // 存储从GitHub API获取的原始下载URL
   String? _originalDownloadUrl;
 
+  // 只关闭当前 Dialog，避免 Get.back() 误关闭页面或 Snackbar。
+  void _closeDialog<T>({T? result}) {
+    if (Get.isDialogOpen == true) {
+      Get.back<T>(result: result);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -144,9 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       releaseData = await _fetchFirstReleaseData(mirrors);
 
-      if (Get.isDialogOpen == true) {
-        Get.back(); // 关闭加载提示
-      }
+      _closeDialog(); // 关闭加载提示
 
       if (releaseData == null) {
         Get.snackbar(
@@ -177,9 +182,7 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     } catch (e) {
-      if (Get.isDialogOpen == true) {
-        Get.back(); // 关闭加载提示
-      }
+      _closeDialog(); // 关闭加载提示
       Log.e('检查更新失败: $e', tag: 'AstrBot');
       Get.snackbar(
         '检查失败',
@@ -277,7 +280,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed: () => Get.back(),
+                    onPressed: () => _closeDialog(),
                   ),
                 ],
               ),
@@ -314,13 +317,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () => _closeDialog(),
                     child: const Text('关闭'),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
-                      Get.back();
+                      _closeDialog();
                       _showDownloadSourceDialog(releaseData);
                     },
                     child: const Text('去下载'),
@@ -422,7 +425,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    Get.back();
+                    _closeDialog();
                   } else {
                     Get.snackbar(
                       '打开失败',
@@ -439,7 +442,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
+            onPressed: () => _closeDialog(),
             child: const Text('取消'),
           ),
         ],
@@ -480,7 +483,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          TextButton(onPressed: () => _closeDialog(), child: const Text('取消')),
           TextButton(
             onPressed: () {
               var title = titleController.text.trim();
@@ -526,7 +529,7 @@ class _SettingsPageState extends State<SettingsPage> {
               }
 
               homeController.addCustomWebView(title, url);
-              Get.back();
+              _closeDialog();
 
               Get.snackbar(
                 '添加成功',
@@ -582,7 +585,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          TextButton(onPressed: () => _closeDialog(), child: const Text('取消')),
           TextButton(
             onPressed: () {
               final title = titleController.text.trim();
@@ -622,7 +625,7 @@ class _SettingsPageState extends State<SettingsPage> {
               }
 
               homeController.updateCustomWebView(index, title, url);
-              Get.back();
+              _closeDialog();
 
               Get.snackbar(
                 '更新成功',
@@ -645,11 +648,11 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('确认删除'),
         content: Text('确定要删除自定义 WebUI "$title" 吗？'),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          TextButton(onPressed: () => _closeDialog(), child: const Text('取消')),
           TextButton(
             onPressed: () {
               homeController.removeCustomWebView(index);
-              Get.back();
+              _closeDialog();
 
               Get.snackbar(
                 '删除成功',
@@ -719,6 +722,9 @@ class _SettingsPageState extends State<SettingsPage> {
       final dataDir = Directory(dataPath);
 
       if (!await dataDir.exists()) {
+        if (showLoadingDialog) {
+          _closeDialog(); // 关闭加载对话框
+        }
         Get.snackbar(
           '备份失败',
           'AstrBot 数据目录不存在',
@@ -745,7 +751,7 @@ class _SettingsPageState extends State<SettingsPage> {
         final fileSizeMB = (fileSize / 1024 / 1024).toStringAsFixed(2);
 
         if (showLoadingDialog) {
-          Get.back(); // 关闭加载对话框
+          _closeDialog(); // 关闭加载对话框
         }
 
         Get.snackbar(
@@ -758,7 +764,7 @@ class _SettingsPageState extends State<SettingsPage> {
         return true;
       } else {
         if (showLoadingDialog) {
-          Get.back(); // 关闭加载对话框
+          _closeDialog(); // 关闭加载对话框
         }
 
         Get.snackbar(
@@ -773,7 +779,7 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     } catch (e) {
       if (showLoadingDialog) {
-        Get.back(); // 关闭加载对话框
+        _closeDialog(); // 关闭加载对话框
       }
 
       Get.snackbar(
@@ -861,11 +867,11 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: false),
+            onPressed: () => _closeDialog(result: false),
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () => Get.back(result: true),
+            onPressed: () => _closeDialog(result: true),
             child: const Text('保存'),
           ),
         ],
@@ -982,11 +988,11 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: false),
+            onPressed: () => _closeDialog(result: false),
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () => Get.back(result: true),
+            onPressed: () => _closeDialog(result: true),
             child: const Text('保存'),
           ),
         ],
@@ -1068,11 +1074,11 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: false),
+            onPressed: () => _closeDialog(result: false),
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () => Get.back(result: true),
+            onPressed: () => _closeDialog(result: true),
             child: const Text('保存'),
           ),
         ],
@@ -1162,7 +1168,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: () async {
                   await Clipboard.setData(
                       ClipboardData(text: scripts.ubuntuPath));
-                  Get.back();
+                  _closeDialog();
                   Get.snackbar(
                     '已复制',
                     '路径已复制到剪贴板',
@@ -1173,7 +1179,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: const Text('复制路径'),
               ),
               TextButton(
-                onPressed: () => Get.back(),
+                onPressed: () => _closeDialog(),
                 child: const Text('关闭'),
               ),
             ],
@@ -1238,18 +1244,18 @@ class _SettingsPageState extends State<SettingsPage> {
                 content: const Text('重新安装将删除所有 AstrBot 数据，\n是否需要先备份当前数据？'),
                 actions: [
                   TextButton(
-                    onPressed: () => Get.back(result: 'cancel'),
+                    onPressed: () => _closeDialog(result: 'cancel'),
                     child: const Text('取消'),
                   ),
                   TextButton(
-                    onPressed: () => Get.back(result: 'no_backup'),
+                    onPressed: () => _closeDialog(result: 'no_backup'),
                     child: const Text(
                       '直接重装',
                       style: TextStyle(color: Colors.orange),
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Get.back(result: 'backup'),
+                    onPressed: () => _closeDialog(result: 'backup'),
                     child: const Text(
                       '备份后重装',
                       style: TextStyle(color: Colors.blue),
@@ -1276,11 +1282,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     content: const Text('数据备份失败，是否仍要继续重新安装？'),
                     actions: [
                       TextButton(
-                        onPressed: () => Get.back(result: false),
+                        onPressed: () => _closeDialog(result: false),
                         child: const Text('取消'),
                       ),
                       TextButton(
-                        onPressed: () => Get.back(result: true),
+                        onPressed: () => _closeDialog(result: true),
                         child: const Text(
                           '继续重装',
                           style: TextStyle(color: Colors.red),
@@ -1303,11 +1309,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 content: const Text('确定要删除所有 AstrBot 数据并重新安装吗？\n此操作不可恢复！'),
                 actions: [
                   TextButton(
-                    onPressed: () => Get.back(result: false),
+                    onPressed: () => _closeDialog(result: false),
                     child: const Text('取消'),
                   ),
                   TextButton(
-                    onPressed: () => Get.back(result: true),
+                    onPressed: () => _closeDialog(result: true),
                     child: const Text(
                       '确定重装',
                       style: TextStyle(color: Colors.red),
@@ -1367,11 +1373,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 content: const Text('此操作将删除 NapcatQQ 安装文件（保留配置文件）并重新安装，确定继续吗？'),
                 actions: [
                   TextButton(
-                    onPressed: () => Get.back(result: false),
+                    onPressed: () => _closeDialog(result: false),
                     child: const Text('取消'),
                   ),
                   TextButton(
-                    onPressed: () => Get.back(result: true),
+                    onPressed: () => _closeDialog(result: true),
                     child: const Text(
                       '确定',
                       style: TextStyle(color: Colors.orange),
@@ -1490,11 +1496,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Get.back(result: false),
+                    onPressed: () => _closeDialog(result: false),
                     child: const Text('取消'),
                   ),
                   TextButton(
-                    onPressed: () => Get.back(result: true),
+                    onPressed: () => _closeDialog(result: true),
                     child: const Text(
                       '确定',
                       style: TextStyle(color: Colors.orange),
@@ -1559,11 +1565,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Get.back(result: false),
+                    onPressed: () => _closeDialog(result: false),
                     child: const Text('取消'),
                   ),
                   TextButton(
-                    onPressed: () => Get.back(result: true),
+                    onPressed: () => _closeDialog(result: true),
                     child: const Text(
                       '确定',
                       style: TextStyle(color: Colors.orange),
@@ -1839,7 +1845,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               const Spacer(),
                               IconButton(
                                 icon: const Icon(Icons.close),
-                                onPressed: () => Get.back(),
+                                onPressed: () => _closeDialog(),
                               ),
                             ],
                           ),
@@ -1903,11 +1909,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 content: const Text('确定要退出应用吗？'),
                 actions: [
                   TextButton(
-                    onPressed: () => Get.back(result: false),
+                    onPressed: () => _closeDialog(result: false),
                     child: const Text('取消'),
                   ),
                   TextButton(
-                    onPressed: () => Get.back(result: true),
+                    onPressed: () => _closeDialog(result: true),
                     child: const Text(
                       '退出',
                       style: TextStyle(color: Colors.red),
