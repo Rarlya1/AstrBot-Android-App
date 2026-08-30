@@ -63,6 +63,11 @@ public class MainActivity extends FragmentActivity {
         setContentView(com.astrbot.app.R.layout.my_activity_layout);
 
         flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+        if (flutterFragment != null) {
+            // FragmentManager 已恢复 FlutterFragment 时直接复用
+            return;
+        }
+
         FlutterEngine flutterEngine = new FlutterEngine(this, null, false);
         flutterEngine.getDartExecutor().executeDartEntrypoint(DartExecutor.DartEntrypoint.createDefault());
 
@@ -141,9 +146,7 @@ public class MainActivity extends FragmentActivity {
 
         GeneratedPluginRegistrant.registerWith(flutterEngine);
         FlutterEngineCache.getInstance().put("my_engine_id", flutterEngine);
-        if (flutterFragment == null) {
-            flutterFragment = FlutterFragment.withCachedEngine("my_engine_id").build();
-        }
+        flutterFragment = FlutterFragment.withCachedEngine("my_engine_id").build();
         fragmentManager
                 .beginTransaction()
                 .add(com.astrbot.app.R.id.fl_container, flutterFragment, TAG_FLUTTER_FRAGMENT)
