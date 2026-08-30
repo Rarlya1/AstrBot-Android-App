@@ -17,26 +17,14 @@ class TerminalPage extends StatefulWidget {
 }
 
 class _TerminalPageState extends State<TerminalPage> {
-  HomeController controller = Get.put(HomeController());
+  final HomeController controller = Get.find<HomeController>();
   ManjaroTerminalTheme terminalTheme = ManjaroTerminalTheme();
   bool visible = false || kDebugMode;
   final TerminalController terminalController = TerminalController();
 
   @override
   void dispose() {
-    // 确保在页面销毁时清理所有终端进程
-    try {
-      if (controller.pseudoTerminal != null) {
-        Log.i('TerminalPage dispose: 关闭主终端进程', tag: 'AstrBot');
-        controller.pseudoTerminal?.kill();
-      }
-      if (controller.napcatTerminal != null) {
-        Log.i('TerminalPage dispose: 关闭 NapCat 终端进程', tag: 'AstrBot-Napcat');
-        controller.napcatTerminal?.kill();
-      }
-    } catch (e) {
-      Log.e('TerminalPage dispose 时出错: $e', tag: 'AstrBot');
-    }
+    // 页面只拥有自己的 TerminalController，不负责关闭 HomeController 的 PTY。
     terminalController.dispose();
     super.dispose();
   }
@@ -63,7 +51,7 @@ class _TerminalPageState extends State<TerminalPage> {
                   child: AbsorbPointer(
                     absorbing: false,
                     child: TerminalView(
-                      controller.terminal,
+                      controller.astrbotTerminal,
                       controller: terminalController,
                       readOnly: true,
                       backgroundOpacity: 1,
