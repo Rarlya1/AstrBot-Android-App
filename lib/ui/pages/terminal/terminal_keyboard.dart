@@ -63,11 +63,9 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
     final cs = Theme.of(context).colorScheme;
 
     return Container(
-      margin: EdgeInsets.only(bottom: bottom),
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(
