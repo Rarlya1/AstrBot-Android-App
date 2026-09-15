@@ -237,7 +237,9 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                 final points = _terminalPointers.values.toList();
                 _pinchStartDistance = (points[0] - points[1]).distance;
                 _pinchStartFontSize = homeController.terminalFontSize.value;
-                _isPinching = true;
+                if (!_isPinching) {
+                  setState(() => _isPinching = true);
+                }
               }
             },
             onPointerMove: (event) {
@@ -264,7 +266,9 @@ class _TerminalTabViewState extends State<TerminalTabView> {
               if (_terminalPointers.isEmpty) {
                 _pinchStartDistance = null;
                 _pinchStartFontSize = null;
-                _isPinching = false;
+                if (_isPinching) {
+                  setState(() => _isPinching = false);
+                }
               }
               if (!wasPinching) _tryCopySelection(tab);
             },
@@ -272,16 +276,51 @@ class _TerminalTabViewState extends State<TerminalTabView> {
               _terminalPointers.remove(event.pointer);
               _pinchStartDistance = null;
               _pinchStartFontSize = null;
+              if (_isPinching) {
+                setState(() => _isPinching = false);
+              }
             },
             child: ClipRect(
-              child: TerminalView(
-                tab.terminal,
-                controller: tab.controller,
-                readOnly: tab.type == TerminalTabType.fixed,
-                backgroundOpacity: 1,
-                theme: ManjaroTerminalTheme(),
-                scrollController: _scrollControllerFor(tab),
-                textStyle: TerminalStyle(fontSize: homeController.terminalFontSize.value),
+              child: Stack(
+                children: [
+                  TerminalView(
+                    tab.terminal,
+                    controller: tab.controller,
+                    readOnly: tab.type == TerminalTabType.fixed,
+                    backgroundOpacity: 1,
+                    theme: ManjaroTerminalTheme(),
+                    scrollController: _scrollControllerFor(tab),
+                    textStyle: TerminalStyle(fontSize: homeController.terminalFontSize.value),
+                  ),
+                  if (_isPinching)
+                    Positioned.fill(
+                      child: Align(
+                        alignment: const Alignment(0, -0.5),
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.72),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
+                              ),
+                              child: Text(
+                                '字体大小 ${homeController.terminalFontSize.value.toStringAsFixed(1)}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
