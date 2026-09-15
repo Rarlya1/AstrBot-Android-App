@@ -46,16 +46,12 @@ class HomeController extends GetxController {
 
   late Terminal astrbotTerminal = Terminal(
     maxLines: 4096,
-    onResize: (width, height, pixelWidth, pixelHeight) {
-      astrbotPty?.resize(height, width);
-    },
-    onOutput: (data) {
-      astrbotPty?.writeString(data);
-    },
   );
+
   late Terminal napcatTerminal = Terminal(
     maxLines: 4096,
   );
+
   bool webviewHasOpen = false;
   final RxBool isLocalhostDetected = false.obs; // localhost:6185 检测标志
   bool _isAppInForeground = true; // 应用是否在前台
