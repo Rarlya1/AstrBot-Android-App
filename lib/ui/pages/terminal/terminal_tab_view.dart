@@ -27,7 +27,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
   double? _pinchStartFontSize;
   bool _isPinching = false;
 
-  static const double _fontSizeStep = 0.2;
+  static const double _fontSizeStep = 0.1;
   static const double _distancePerFontSizeStep = 24.0;
 
   ScrollController _scrollControllerFor(TerminalTab tab) {

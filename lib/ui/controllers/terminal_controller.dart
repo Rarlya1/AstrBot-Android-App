@@ -637,13 +637,8 @@ class HomeController extends GetxController {
       LifecycleObserver(
         onResume: () {
           _isAppInForeground = true;
-          // 当应用回到前台且条件满足但webview未打开时，打开webview
-          if (isLocalhostDetected.value && !webviewHasOpen) {
-            Future.microtask(() {
-              Get.toNamed(AppRoutes.webview);
-              webviewHasOpen = true;
-            });
-          }
+          // 复用统一检查逻辑，处理 WebView、登录提醒和自定义启动命令。
+          _checkAndNavigateToWebview();
         },
         onPause: () {
           _isAppInForeground = false;
