@@ -372,6 +372,9 @@ class HomeController extends GetxController {
 
       if (event.contains('正在快速登录')) {
         _isNapCatLogin = true;
+      } else if (event.contains('自动快速登录失败')) {
+        _isNapCatLogin = false;
+        _isNapCatQuickLogin = false;
       }
 
       // 写入 NapCat 终端视图
