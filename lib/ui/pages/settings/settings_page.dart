@@ -1202,6 +1202,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      key: const PageStorageKey<String>('settings_page_scroll'),
       children: [
         const Padding(
           padding: EdgeInsets.all(16.0),
