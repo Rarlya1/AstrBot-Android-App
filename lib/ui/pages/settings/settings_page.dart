@@ -1724,6 +1724,7 @@ class _SettingsPageState extends State<SettingsPage> {
               // 使用新的方法来同步更新响应式变量
               homeController.setNapCatWebUiEnabled(value);
 
+              Get.closeAllSnackbars();
               Get.snackbar(
                 value ? 'WebUI 已启用' : 'WebUI 已禁用',
                 value ? 'NapCat 标签页已显示，可以立即访问控制面板' : 'NapCat 标签页已隐藏',
@@ -1775,6 +1776,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   // 使用新的方法来同步更新响应式变量
                   homeController.setShowTerminalWhiteText(value);
 
+                  Get.closeAllSnackbars();
                   Get.snackbar(
                     value ? '已启用白色文本显示' : '已禁用白色文本显示',
                     value ? '终端将显示所有日志输出' : '终端将仅显示彩色日志输出',
