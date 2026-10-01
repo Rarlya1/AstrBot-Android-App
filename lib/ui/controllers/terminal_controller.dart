@@ -58,6 +58,7 @@ class HomeController extends GetxController {
   bool _isAstrBotConfiguring = false; // AstrBot 配置中标志，用于控制终端输出过滤
   bool _isNapCatLogin = false; // NapCat 登录标记
   bool _isNapCatQuickLogin = false; // NapCat 快速登录标记
+  bool _isCustomCommand = false; // 自定义命令标记
   String _pendingOutput = ''; // 待处理的输出缓冲
 
   File progressFile = File('${RuntimeEnvir.tmpPath}/progress');
@@ -276,12 +277,6 @@ class HomeController extends GetxController {
           _isNapCatLogin = true; // 视为已登录，防止重复触发
         }
 
-        // 新建终端页并运行自定义启动命令
-        final command = getCustomStartupCommand();
-        if (command.trim().isNotEmpty) {
-          terminalTabManager.addSystemTerminalTab(command);
-        }
-
         webviewHasOpen = true;
       });
     }
@@ -313,8 +308,17 @@ class HomeController extends GetxController {
         bumpProgress();
 
         // 检查是否条件满足
-        // 现在的实际功能为检查napcat登录状态和新建终端运行自定义启动命令
+        // 现在的实际功能为检查napcat登录状态
         _checkAndNavigateToWebview();
+
+        if (!_isCustomCommand) {
+          // 新建终端页并运行自定义启动命令
+          final command = getCustomStartupCommand();
+          if (command.trim().isNotEmpty) {
+            terminalTabManager.addSystemTerminalTab(command);
+          }
+          _isCustomCommand = true;
+        }
 
         Future.delayed(const Duration(milliseconds: 2000), () {
           update();
