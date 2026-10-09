@@ -9,6 +9,16 @@ import '../../controllers/terminal_tab_manager.dart';
 import 'terminal_keyboard.dart';
 import 'terminal_theme.dart';
 
+class _TerminalScrollAnchor {
+  const _TerminalScrollAnchor({
+    required this.offset,
+    required this.atBottom,
+  });
+
+  final double offset;
+  final bool atBottom;
+}
+
 /// 终端标签页视图
 class TerminalTabView extends StatefulWidget {
   const TerminalTabView({super.key});
@@ -26,6 +36,11 @@ class _TerminalTabViewState extends State<TerminalTabView> {
   double? _pinchStartDistance;
   double? _pinchStartFontSize;
   bool _isPinching = false;
+  double? _pendingFontSize;
+  bool _fontSizeUpdateScheduled = false;
+  int _fontSizeUpdateGeneration = 0;
+  final Map<TerminalTab, _TerminalScrollAnchor> _fontSizeAnchors =
+      <TerminalTab, _TerminalScrollAnchor>{};
 
   static const double _fontSizeStep = 0.1;
   static const double _distancePerFontSizeStep = 24.0;
@@ -39,34 +54,97 @@ class _TerminalTabViewState extends State<TerminalTabView> {
 
   @override
   void dispose() {
+    _pendingFontSize = null;
+    _fontSizeAnchors.clear();
     for (final controller in _terminalScrollControllers.values) {
       controller.dispose();
     }
     super.dispose();
   }
 
-  void _setTerminalFontSize(TerminalTab tab, double size) {
-    final scrollController = _scrollControllerFor(tab);
-    final oldFontSize = homeController.terminalFontSize.value;
-    final wasAtBottom = scrollController.hasClients &&
-        scrollController.position.pixels >=
-            scrollController.position.maxScrollExtent - 1;
-    final oldOffset = scrollController.hasClients
-        ? scrollController.position.pixels
-        : 0.0;
+  void _setTerminalFontSize(double size) {
+    final nextSize = size
+        .clamp(
+          HomeController.minTerminalFontSize,
+          HomeController.maxTerminalFontSize,
+        )
+        .toDouble();
 
-    homeController.setTerminalFontSize(size);
-    final newFontSize = homeController.terminalFontSize.value;
-    if (!scrollController.hasClients || oldFontSize == newFontSize) return;
+    final currentOrPendingSize =
+        _pendingFontSize ?? homeController.terminalFontSize.value;
+    if (currentOrPendingSize == nextSize) {
+      return;
+    }
 
+    if (_pendingFontSize == null) {
+      _captureFontSizeAnchors();
+    }
+    _pendingFontSize = nextSize;
+    if (_fontSizeUpdateScheduled) return;
+
+    _fontSizeUpdateScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!scrollController.hasClients) return;
-      final maxScrollExtent = scrollController.position.maxScrollExtent;
-      final newOffset = wasAtBottom
-          ? maxScrollExtent
-          : oldOffset * newFontSize / oldFontSize;
-      scrollController.jumpTo(newOffset.clamp(0.0, maxScrollExtent));
+      _fontSizeUpdateScheduled = false;
+      if (!mounted) return;
+
+      final pendingSize = _pendingFontSize;
+      _pendingFontSize = null;
+      if (pendingSize == null ||
+          pendingSize == homeController.terminalFontSize.value) {
+        _fontSizeAnchors.clear();
+        return;
+      }
+
+      final oldSize = homeController.terminalFontSize.value;
+      final anchors = Map<TerminalTab, _TerminalScrollAnchor>.from(
+        _fontSizeAnchors,
+      );
+      _fontSizeAnchors.clear();
+      final generation = ++_fontSizeUpdateGeneration;
+      homeController.setTerminalFontSize(pendingSize);
+
+      // 等待新的单元格尺寸和 xterm 实时调整完成。
+      // 只有最新一轮缩放更新可以恢复滚动位置。
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || generation != _fontSizeUpdateGeneration) return;
+        _restoreFontSizeAnchors(anchors, oldSize, pendingSize);
+      });
     });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  void _captureFontSizeAnchors() {
+    _fontSizeAnchors.clear();
+    final manager = homeController.terminalTabManager;
+    for (final tab in manager.tabs) {
+      final scrollController = _scrollControllerFor(tab);
+      if (!scrollController.hasClients) continue;
+
+      final position = scrollController.position;
+      _fontSizeAnchors[tab] = _TerminalScrollAnchor(
+        offset: position.pixels,
+        atBottom: position.pixels >= position.maxScrollExtent - 1.0,
+      );
+    }
+  }
+
+  void _restoreFontSizeAnchors(
+    Map<TerminalTab, _TerminalScrollAnchor> anchors,
+    double oldSize,
+    double newSize,
+  ) {
+    if (oldSize <= 0) return;
+
+    for (final entry in anchors.entries) {
+      final scrollController = _scrollControllerFor(entry.key);
+      if (!scrollController.hasClients) continue;
+
+      final position = scrollController.position;
+      final newOffset = entry.value.atBottom
+          ? position.maxScrollExtent
+          : entry.value.offset * newSize / oldSize;
+      position.jumpTo(newOffset.clamp(0.0, position.maxScrollExtent));
+    }
   }
 
   @override
@@ -254,11 +332,10 @@ class _TerminalTabViewState extends State<TerminalTabView> {
               final points = _terminalPointers.values.toList();
               final distance = (points[0] - points[1]).distance;
               final distanceDelta = distance - _pinchStartDistance!;
-              final sizeDelta = (distanceDelta / _distancePerFontSizeStep).round() * _fontSizeStep;
-              _setTerminalFontSize(
-                tab,
-                _pinchStartFontSize! + sizeDelta,
-              );
+              final sizeDelta =
+                  (distanceDelta / _distancePerFontSizeStep).round() *
+                      _fontSizeStep;
+              _setTerminalFontSize(_pinchStartFontSize! + sizeDelta);
             },
             onPointerUp: (event) {
               _terminalPointers.remove(event.pointer);
@@ -274,9 +351,11 @@ class _TerminalTabViewState extends State<TerminalTabView> {
             },
             onPointerCancel: (event) {
               _terminalPointers.remove(event.pointer);
-              _pinchStartDistance = null;
-              _pinchStartFontSize = null;
-              if (_isPinching) {
+              if (_terminalPointers.isEmpty) {
+                _pinchStartDistance = null;
+                _pinchStartFontSize = null;
+              }
+              if (_terminalPointers.length < 2 && _isPinching) {
                 setState(() => _isPinching = false);
               }
             },
@@ -290,7 +369,9 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                     backgroundOpacity: 1,
                     theme: ManjaroTerminalTheme(),
                     scrollController: _scrollControllerFor(tab),
-                    textStyle: TerminalStyle(fontSize: homeController.terminalFontSize.value),
+                    textStyle: TerminalStyle(
+                      fontSize: homeController.terminalFontSize.value,
+                    ),
                   ),
                   if (_isPinching)
                     Positioned.fill(

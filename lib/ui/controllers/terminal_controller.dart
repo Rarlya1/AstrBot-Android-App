@@ -71,6 +71,23 @@ class HomeController extends GetxController {
     terminalFontSize.value = size.clamp(minTerminalFontSize, maxTerminalFontSize).toDouble();
   }
 
+  void _bindFixedTerminalResizeHandlers() {
+    astrbotTerminal.onResize = (width, height, _, __) {
+      try {
+        astrbotPty?.resize(height, width);
+      } catch (e) {
+        Log.e('调整 AstrBot 终端大小失败: $e', tag: 'AstrBot');
+      }
+    };
+    napcatTerminal.onResize = (width, height, _, __) {
+      try {
+        napcatPty?.resize(height, width);
+      } catch (e) {
+        Log.e('调整 NapCat 终端大小失败: $e', tag: 'AstrBot-Napcat');
+      }
+    };
+  }
+
   String getCustomStartupCommand() {
     return customStartupCommand.get() as String? ?? '';
   }
@@ -548,8 +565,23 @@ class HomeController extends GetxController {
 
     // 创建终端
     astrbotPty =
-        createPTY(rows: astrbotTerminal.viewHeight, columns: astrbotTerminal.viewWidth);
-    napcatPty = createPTY();
+      createPTY(rows: astrbotTerminal.viewHeight, columns: astrbotTerminal.viewWidth);
+    napcatPty =
+      createPTY(rows: napcatTerminal.viewHeight, columns: napcatTerminal.viewWidth);
+
+    // 如果首帧布局早于 PTY 创建，补发一次当前尺寸。
+    astrbotTerminal.onResize?.call(
+      astrbotTerminal.viewWidth,
+      astrbotTerminal.viewHeight,
+      0,
+      0,
+    );
+    napcatTerminal.onResize?.call(
+      napcatTerminal.viewWidth,
+      napcatTerminal.viewHeight,
+      0,
+      0,
+    );
 
     // 复制必要的文件
     setProgress('复制 Ubuntu 系统镜像...');
@@ -598,6 +630,7 @@ class HomeController extends GetxController {
 
     // 初始化终端标签页管理器
     terminalTabManager = TerminalTabManager();
+    _bindFixedTerminalResizeHandlers();
     terminalTabManager.initializeFixedTab(
       astrbotTerminal,
       napcatTerminal,
