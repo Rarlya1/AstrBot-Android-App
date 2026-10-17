@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ASTRBOT_APP_VERSION="{{VERSION}}"
+ASTRBOT_APP_VERSION="1.1.1"
 
 # 自定义 Git Clone 命令（为空时使用默认逻辑）
 CUSTOM_GIT_CLONE=""
@@ -286,7 +286,7 @@ EOF
 
   # 设置napcat使用exec
   if ! grep -q "exec env LD_PRELOAD" "$HOME/Napcat/launcher.sh"; then
-    sed -i 's/LD_PRELOAD/exec env LD_PRELOAD/' "$HOME/Napcat/launcher.sh"
+    sed -i 's/env LD_PRELOAD/exec env LD_PRELOAD/' "$HOME/Napcat/launcher.sh"
   fi
 
   progress_echo "Napcat $L_INSTALLED"
