@@ -64,24 +64,6 @@ class IndexAwareCircularBuffer<T extends IndexedItem> {
     return _array.length;
   }
 
-  /// Allows the buffer to grow when its owner uses a logical-line limit rather
-  /// than a physical-line limit.
-  void ensureCapacity(int requiredLength) {
-    if (requiredLength <= _array.length) return;
-
-    var newLength = _array.length;
-    while (newLength < requiredLength) {
-      newLength *= 2;
-    }
-
-    final newArray = List<T?>.filled(newLength, null);
-    for (var i = 0; i < _length; i++) {
-      newArray[i] = _getChild(i);
-    }
-    _array = newArray;
-    _startIndex = 0;
-  }
-
   /// Sets the number of elements that can be stored in the list. This operation
   /// is relatively expensive, as it requires the backing array to be
   /// reallocated.
@@ -149,7 +131,6 @@ class IndexAwareCircularBuffer<T extends IndexedItem> {
   /// Adds [value] to the end of the list. May cause the first element to be
   /// trimmed if the list is full.
   void push(T value) {
-    ensureCapacity(_length + 1);
     _adoptChild(_length, value);
 
     if (_length == _array.length) {
@@ -196,8 +177,6 @@ class IndexAwareCircularBuffer<T extends IndexedItem> {
   /// right. May cause the first element to be trimmed if the list is full.
   void insert(int index, T item) {
     RangeError.checkValueInInterval(index, 0, _length, 'index');
-
-    ensureCapacity(_length + 1);
 
     if (index == _length) {
       return push(item);
@@ -252,15 +231,26 @@ class IndexAwareCircularBuffer<T extends IndexedItem> {
 
   /// Replaces all elements in the list with [replacement].
   void replaceWith(List<T> replacement) {
-    clear();
-    ensureCapacity(replacement.length);
+    for (var i = 0; i < _length; i++) {
+      _dropChild(i);
+    }
 
-    for (var i = 0; i < replacement.length; i++) {
-      _adoptChild(i, replacement[i]);
+    var copyStart = 0;
+    if (replacement.length > maxLength) {
+      copyStart = replacement.length - maxLength;
+    }
+
+    for (var i = 0; i < copyStart; i++) {
+      _dropChild(i);
+    }
+
+    final copyLength = replacement.length - copyStart;
+    for (var i = 0; i < copyLength; i++) {
+      _adoptChild(i, replacement[copyStart + i]);
     }
 
     _startIndex = 0;
-    _length = replacement.length;
+    _length = copyLength;
   }
 
   /// Replaces the element at [index] with [value] and returns the replaced

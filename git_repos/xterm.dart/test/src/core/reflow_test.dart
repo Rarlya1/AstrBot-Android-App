@@ -93,38 +93,4 @@ void main() {
       expect(terminal.buffer.lines[i].length, 13);
     }
   });
-
-  test('limits logical lines instead of wrapped physical lines', () {
-    final terminal = Terminal(maxLines: 3);
-    terminal.resize(5, 3);
-
-    terminal.write('123456789');
-    terminal.write('\r\n');
-    terminal.write('line-2\r\n');
-    terminal.write('line-3\r\n');
-    terminal.write('line-4');
-
-    expect(terminal.buffer.lines.length, greaterThan(3));
-    expect(
-      terminal.buffer.lines.map((line) => line.toString()).join('|'),
-      contains('line-4'),
-    );
-    expect(
-      terminal.buffer.lines.map((line) => line.toString()).join('|'),
-      isNot(contains('12345')),
-    );
-  });
-
-  test('keeps wrapped content through reflow with logical limit', () {
-    final terminal = Terminal(maxLines: 2);
-    terminal.resize(5, 3);
-    terminal.write('abcdefghij');
-    terminal.write('\r\nsecond');
-
-    terminal.resize(10, 3);
-
-    final text = terminal.buffer.lines.map((line) => line.toString()).join('|');
-    expect(text, contains('abcdefghij'));
-    expect(text, contains('second'));
-  });
 }

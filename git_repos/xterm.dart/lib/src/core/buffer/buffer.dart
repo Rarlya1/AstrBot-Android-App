@@ -57,11 +57,9 @@ class Buffer {
   /// Height of the viewport in rows. Also the index of the last line.
   int get viewHeight => terminal.viewHeight;
 
-  /// Physical lines are allowed to grow. [maxLines] limits logical lines and
-  /// is enforced by [_trimLogicalLines].
-  late final lines = IndexAwareCircularBuffer<BufferLine>(
-    max(maxLines, terminal.viewHeight),
-  );
+  /// lines of the buffer. the length of [lines] should always be equal or
+  /// greater than [viewHeight].
+  late final lines = IndexAwareCircularBuffer<BufferLine>(maxLines);
 
   /// Total number of lines in the buffer. Always equal or greater than
   /// [viewHeight].
@@ -135,10 +133,7 @@ class Buffer {
 
     if (cellWidth == 2) {
       writeChar(0);
-      return;
     }
-
-    _trimLogicalLines();
   }
 
   /// The line at the current cursor position.
@@ -226,27 +221,6 @@ class Buffer {
     }
   }
 
-  void _trimLogicalLines() {
-    if (isAltBuffer || lines.length <= viewHeight) return;
-
-    var logicalLines = 0;
-    var trimCount = 0;
-    final scrollbackLength = lines.length - viewHeight;
-    for (var i = 0; i < scrollbackLength; i++) {
-      if (i == 0 || !lines[i].isWrapped) {
-        logicalLines++;
-      }
-      if (logicalLines > maxLines) {
-        trimCount = i;
-        break;
-      }
-    }
-
-    if (trimCount > 0) {
-      lines.trimStart(trimCount);
-    }
-  }
-
   void scrollUp(int lines) {
     for (var i = absoluteMarginTop; i <= absoluteMarginBottom; i++) {
       if (i <= absoluteMarginBottom - lines) {
@@ -269,7 +243,6 @@ class Buffer {
       if (_cursorY == _marginBottom) {
         if (marginTop == 0 && !isAltBuffer) {
           lines.insert(absoluteMarginBottom + 1, _newEmptyLine());
-          _trimLogicalLines();
         } else {
           scrollUp(1);
         }
@@ -286,7 +259,6 @@ class Buffer {
         scrollUp(1);
       } else {
         lines.push(_newEmptyLine());
-        _trimLogicalLines();
       }
     } else {
       // there're still lines so we simply move cursor down.
@@ -504,7 +476,6 @@ class Buffer {
         }
 
         lines.replaceWith(reflowResult);
-        _trimLogicalLines();
       } else {
         lines.forEach((item) => item.resize(newWidth));
       }
