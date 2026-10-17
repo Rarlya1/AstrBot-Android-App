@@ -21,6 +21,9 @@ class TerminalTabView extends StatefulWidget {
 }
 
 class _TerminalTabViewState extends State<TerminalTabView> {
+  /// 统一主题入口
+  ColorScheme get colors => Theme.of(context).colorScheme;
+
   final HomeController homeController = Get.find<HomeController>();
   bool _isCopyDialogOpen = false;
   final Map<int, Offset> _terminalPointers = <int, Offset>{};
@@ -198,7 +201,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colors.surface,
         border: Border(
           bottom: BorderSide(
             color: Theme.of(context).dividerColor,
@@ -254,12 +257,12 @@ class _TerminalTabViewState extends State<TerminalTabView> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isActive
-              ? Theme.of(context).colorScheme.primaryContainer
+              ? colors.primaryContainer
               : Colors.transparent,
           border: Border(
             bottom: BorderSide(
               color: isActive
-                  ? Theme.of(context).colorScheme.primary
+                  ? colors.primary
                   : Colors.transparent,
               width: 2,
             ),
@@ -275,8 +278,8 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                   : Icons.terminal,
               size: 16,
               color: isActive
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ? colors.primary
+                  : colors.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(width: 8),
 
@@ -288,8 +291,8 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                   fontSize: 14,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   color: isActive
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface,
+                      ? colors.primary
+                      : colors.onSurface,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -303,7 +306,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                 child: Icon(
                   Icons.close,
                   size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: colors.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -441,8 +444,8 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                       message: '滚动到最新输出',
                       child: Material(
                         color: tab.type == TerminalTabType.system
-                            ? Theme.of(context).colorScheme.surface
-                            : Theme.of(context).colorScheme.surfaceContainerHigh,
+                            ? colors.surface
+                            : colors.surfaceContainerHigh,
                         elevation: 2,
                         shape: const CircleBorder(),
                         clipBehavior: Clip.antiAlias,
@@ -454,7 +457,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                             height: 40,
                             child: Icon(
                               Icons.keyboard_arrow_down,
-                              color: Theme.of(context).colorScheme.onSurface,
+                              color: colors.onSurface,
                               size: 28,
                             ),
                           ),
