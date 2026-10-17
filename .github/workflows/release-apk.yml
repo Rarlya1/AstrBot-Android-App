@@ -87,7 +87,7 @@ jobs:
       - name: Generate release summary
         run: |
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
-          if [ -n "$PREVIOUS_TAG" ]; then LOG_RANGE="${PREVIOUS_TAG}..HEAD"; else LOG_RANGE=HEAD; fi
+          if [ -n "$PREVIOUS_TAG" ]; then LOG_RANGE="${PREVIOUS_TAG}..HEAD"; else LOG_RANGE="HEAD^1..HEAD"; fi
 
           NOTES_DIR=$(mktemp -d)
           trap 'rm -rf "$NOTES_DIR"' EXIT
