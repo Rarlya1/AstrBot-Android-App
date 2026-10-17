@@ -11,6 +11,7 @@ import 'dart:async';
 import 'generated/l10n.dart';
 import 'core/constants/scripts.dart' as scripts;
 import 'core/services/foreground_service.dart';
+import 'core/theme/app_theme.dart';
 import 'ui/controllers/terminal_controller.dart';
 import 'ui/routes/app_routes.dart';
 
@@ -57,6 +58,8 @@ Future<void> main() async {
   ));
   RuntimeEnvir.initEnvirWithPackageName('com.astrbot.app');
   await initSettingStore(RuntimeEnvir.configPath);
+  // 读取持久化的主题模式
+  AppTheme.load();
   runApp(const AstrBot());
 
 }
@@ -129,26 +132,32 @@ class _AstrBotState extends State<AstrBot> with WidgetsBindingObserver {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'AstrBot Android',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.primaries[3],
-      ),
-      // locale: const Locale('zh', 'CN'),
-      // locale: const Locale('en'),
-      localizationsDelegates: const [
-        S.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: S.delegate.supportedLocales,
-      initialBinding: HomeControllerBinding(),
-      // 使用路由管理
-      initialRoute: Directory('${scripts.ubuntuPath}/root/AstrBot/data').existsSync()
-          ? AppRoutes.webview
-          : AppRoutes.terminal,
-      getPages: AppRoutes.routes,
+    // 主题模式由 AppTheme.modeNotifier 驱动，切换时整体重建
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppTheme.modeNotifier,
+      builder: (context, themeMode, _) {
+        return GetMaterialApp(
+          title: 'AstrBot Android',
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeMode,
+          // locale: const Locale('zh', 'CN'),
+          // locale: const Locale('en'),
+          localizationsDelegates: const [
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: S.delegate.supportedLocales,
+          initialBinding: HomeControllerBinding(),
+          // 使用路由管理
+          initialRoute: Directory('${scripts.ubuntuPath}/root/AstrBot/data').existsSync()
+              ? AppRoutes.webview
+              : AppRoutes.terminal,
+          getPages: AppRoutes.routes,
+        );
+      },
     );
   }
 }
