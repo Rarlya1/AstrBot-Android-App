@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../../core/constants/scripts.dart' as scripts;
 import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// 原生 WebView 通道
 const _nativeWebViewChannel = MethodChannel('astrbot_native_webview');
@@ -339,6 +340,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // 显示下载源选择对话框
   void _showDownloadSourceDialog(Map<String, dynamic> releaseData) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     // 如果还没有保存原始URL，从releaseData中构造
     if (_originalDownloadUrl == null) {
       final assets = releaseData['assets'] as List?;
@@ -404,9 +406,12 @@ class _SettingsPageState extends State<SettingsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '请选择适合您网络环境的下载源',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 14,
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             ...sources.map((source) {
@@ -916,6 +921,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // 显示自定义 Git Clone 对话框
   void _showCustomGitCloneDialog() async {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final scriptPath = '${scripts.ubuntuPath}/root/astrbot-startup.sh';
     final scriptFile = File(scriptPath);
 
@@ -962,14 +968,20 @@ class _SettingsPageState extends State<SettingsPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '自定义克隆命令，以使用 fork 的 AstrBot 仓库；目标目录固定为 AstrBot，不可自定义。\n留空则使用默认逻辑（从镜像源获取官方最新 tag）。',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 '示例：\ngit clone https://github.com/AstrBotDevs/AstrBot.git',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -1037,6 +1049,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _showCustomStartupCommandDialog() async {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final currentCommand =
         homeController.customStartupCommand.get() as String? ?? '';
     final commandController = TextEditingController(text: currentCommand);
@@ -1048,14 +1061,20 @@ class _SettingsPageState extends State<SettingsPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '自动打开新终端并执行任意启动命令',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 '示例：\ncd /root/AstrBot\npython main.py &',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -1100,6 +1119,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // 打开文件管理器并导航到 AstrBot Ubuntu 文件系统位置
   Future<void> _openFileManager() async {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     try {
       // 使用 DocumentsProvider 的 content URI 打开文件管理器
       // authority: com.astrbot.app.documents
@@ -1134,31 +1154,37 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(fontSize: 14),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'AstrBot Ubuntu',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: cs.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   '你可以手动打开系统"文件"应用，在侧栏中找到"AstrBot Ubuntu"来访问。',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '或使用 MT 文件管理器等应用，添加以下路径至侧栏:',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 SelectableText(
                   scripts.ubuntuPath,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontFamily: 'monospace',
-                    color: Colors.blue,
+                    color: cs.primary,
                   ),
                 ),
               ],
@@ -1201,747 +1227,807 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      key: const PageStorageKey<String>('settings_page_scroll'),
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            '设置',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.info_outline),
-          title: const Text('软件版本'),
-          subtitle: Text(
-            _appVersion.isEmpty ? '加载中...' : '$_appVersion（点击检查更新）',
-          ),
-          onTap: () => _checkForUpdates(),
-        ),
-        ListTile(
-          leading: const Icon(Icons.home),
-          title: const Text('回到 AstrBot 主页'),
-          subtitle: const Text('切换到 AstrBot 页面'),
-          onTap: () {
-            homeController.navigateToTab.value = 0;
-            Get.snackbar(
-              '已跳转',
-              '正在切换到 AstrBot 页面',
-              snackPosition: SnackPosition.BOTTOM,
-              duration: const Duration(seconds: 2),
-            );
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.restart_alt),
-          title: const Text('更新或重装 AstrBot'),
-          subtitle: const Text('清除 AstrBot 组件并重新安装最新版本'),
-          onTap: () async {
-            // 首先询问是否需要备份
-            final backupChoice = await Get.dialog<String>(
-              AlertDialog(
-                title: const Text('重新安装 AstrBot'),
-                content: const Text('重新安装将删除所有 AstrBot 数据，\n是否需要先备份当前数据？'),
-                actions: [
-                  TextButton(
-                    onPressed: () => _closeDialog(result: 'cancel'),
-                    child: const Text('取消'),
-                  ),
-                  TextButton(
-                    onPressed: () => _closeDialog(result: 'no_backup'),
-                    child: const Text(
-                      '直接重装',
-                      style: TextStyle(color: Colors.orange),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => _closeDialog(result: 'backup'),
-                    child: const Text(
-                      '备份后重装',
-                      style: TextStyle(color: Colors.blue),
-                    ),
-                  ),
-                ],
-              ),
-            );
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colors = theme.colorScheme;
 
-            if (backupChoice == 'cancel' || backupChoice == null) {
-              return;
-            }
-
-            // 如果选择备份，先执行备份
-            if (backupChoice == 'backup') {
-              bool backupSuccess =
-                  await _performBackup(showLoadingDialog: true);
-
-              if (!backupSuccess) {
-                // 备份失败，询问是否继续
-                final continueAnyway = await Get.dialog<bool>(
-                  AlertDialog(
-                    title: const Text('备份失败'),
-                    content: const Text('数据备份失败，是否仍要继续重新安装？'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => _closeDialog(result: false),
-                        child: const Text('取消'),
-                      ),
-                      TextButton(
-                        onPressed: () => _closeDialog(result: true),
-                        child: const Text(
-                          '继续重装',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (continueAnyway != true) {
-                  return;
-                }
-              }
-            }
-
-            // 最终确认重新安装
-            final finalConfirm = await Get.dialog<bool>(
-              AlertDialog(
-                title: const Text('确认重新安装'),
-                content: const Text('确定要删除所有 AstrBot 数据并重新安装吗？\n此操作不可恢复！'),
-                actions: [
-                  TextButton(
-                    onPressed: () => _closeDialog(result: false),
-                    child: const Text('取消'),
-                  ),
-                  TextButton(
-                    onPressed: () => _closeDialog(result: true),
-                    child: const Text(
-                      '确定重装',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
-              ),
-            );
-
-            if (finalConfirm == true) {
-              try {
-                // 删除 AstrBot 目录（~/AstrBot）
-                final astrBotPath = '${scripts.ubuntuPath}/root/AstrBot';
-                final astrBotDir = Directory(astrBotPath);
-                if (await astrBotDir.exists()) {
-                  await astrBotDir.delete(recursive: true);
-                  Log.i('已删除 AstrBot 目录: $astrBotPath', tag: 'AstrBot');
-                }
-
-                if (context.mounted) {
-                  Get.snackbar(
-                    '重装成功',
-                    '应用将自动退出，请重新启动',
-                    snackPosition: SnackPosition.BOTTOM,
-                    duration: const Duration(seconds: 2),
-                  );
-
-                  // 2秒后自动退出应用
-                  Future.delayed(const Duration(seconds: 2), () {
-                    exit(0);
-                  });
-                }
-              } catch (e) {
-                Log.e('重新安装 AstrBot 失败: $e', tag: 'AstrBot');
-                if (context.mounted) {
-                  Get.snackbar(
-                    '重新安装失败',
-                    e.toString(),
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              }
-            }
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.refresh),
-          title: const Text('更新或重装 NapcatQQ'),
-          subtitle: const Text('清除 NapcatQQ 组件并重新安装最新版本'),
-          onTap: () async {
-            // 显示确认对话框
-            final confirm = await Get.dialog<bool>(
-              AlertDialog(
-                title: const Text('确认重新安装'),
-                content: const Text('此操作将删除 NapcatQQ 安装文件（保留配置文件）并重新安装，确定继续吗？'),
-                actions: [
-                  TextButton(
-                    onPressed: () => _closeDialog(result: false),
-                    child: const Text('取消'),
-                  ),
-                  TextButton(
-                    onPressed: () => _closeDialog(result: true),
-                    child: const Text(
-                      '确定',
-                      style: TextStyle(color: Colors.orange),
-                    ),
-                  ),
-                ],
-              ),
-            );
-
-            if (confirm == true) {
-              try {
-                // 删除 launcher.sh 文件，这是安装判断的依据
-                final launcherPath = '${scripts.ubuntuPath}/root/Napcat/launcher.sh';
-                final launcherFile = File(launcherPath);
-                if (await launcherFile.exists()) {
-                  await launcherFile.delete();
-                  Log.i('已删除 launcher.sh: $launcherPath', tag: 'AstrBot');
-                }
-
-                if (context.mounted) {
-                  Get.snackbar(
-                    '重装成功',
-                    '应用将自动退出，请重新启动',
-                    snackPosition: SnackPosition.BOTTOM,
-                    duration: const Duration(seconds: 2),
-                  );
-
-                  // 2秒后自动退出应用
-                  Future.delayed(const Duration(seconds: 2), () {
-                    exit(0);
-                  });
-                }
-              } catch (e) {
-                Log.e('重新安装 NapcatQQ 失败: $e', tag: 'AstrBot');
-                if (context.mounted) {
-                  Get.snackbar(
-                    '重新安装失败',
-                    e.toString(),
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              }
-            }
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.build),
-          title: const Text('覆盖安装插件依赖'),
-          subtitle: const Text('下次启动时重新扫描并安装所有插件依赖'),
-          onTap: () async {
-            try {
-              final scriptPath =
-                  '${scripts.ubuntuPath}/root/astrbot-startup.sh';
-              final scriptFile = File(scriptPath);
-
-              if (await scriptFile.exists()) {
-                String content = await scriptFile.readAsString();
-
-                // 将 REINSTALL_PLUGINS_FLAG=0 修改为 REINSTALL_PLUGINS_FLAG=1
-                content = content.replaceFirst(
-                  RegExp(r'^REINSTALL_PLUGINS_FLAG=0$', multiLine: true),
-                  'REINSTALL_PLUGINS_FLAG=1',
-                );
-
-                await scriptFile.writeAsString(content);
-                Log.i('已设置插件依赖重装标记', tag: 'AstrBot');
-
-                Get.snackbar(
-                  '设置成功',
-                  '下次启动时将重新安装所有插件依赖',
-                  snackPosition: SnackPosition.BOTTOM,
-                  duration: const Duration(seconds: 2),
-                );
-              } else {
-                Get.snackbar(
-                  '提示',
-                  '启动脚本文件不存在，请先启动一次应用',
-                  snackPosition: SnackPosition.BOTTOM,
-                  duration: const Duration(seconds: 2),
-                );
-              }
-            } catch (e) {
-              Log.e('设置重装标记失败: $e', tag: 'AstrBot');
-              Get.snackbar(
-                '操作失败',
-                '设置重装标记失败: $e',
-                snackPosition: SnackPosition.BOTTOM,
-                duration: const Duration(seconds: 3),
-              );
-            }
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.backup),
-          title: const Text('备份 AstrBot 数据'),
-          subtitle: const Text('备份 AstrBot 配置和数据到手机存储'),
-          onTap: () async {
-            await _performBackup(showLoadingDialog: true);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.delete),
-          title: const Text('清除 AstrBot 数据'),
-          subtitle: const Text('清除 AstrBot 配置和数据，\n重启时自动从备份恢复或重新初始化'),
-          onTap: () async {
-            // 显示确认对话框
-            final confirmed = await Get.dialog<bool>(
-              AlertDialog(
-                title: const Text('确认清除数据'),
-                content: const Text(
-                  '此操作将删除所有 AstrBot 数据和配置，\n'
-                  '重启后将自动从备份恢复或重新初始化。\n\n'
-                  '是否继续？',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => _closeDialog(result: false),
-                    child: const Text('取消'),
-                  ),
-                  TextButton(
-                    onPressed: () => _closeDialog(result: true),
-                    child: const Text(
-                      '确定',
-                      style: TextStyle(color: Colors.orange),
-                    ),
-                  ),
-                ],
-              ),
-            );
-
-            if (confirmed == true) {
-              try {
-                final dataPath = '${scripts.ubuntuPath}/root/AstrBot/data';
-                final dataDir = Directory(dataPath);
-
-                if (await dataDir.exists()) {
-                  await dataDir.delete(recursive: true);
-                  Log.i('已清除 AstrBot 数据目录: $dataPath', tag: 'AstrBot');
-
-                  Get.snackbar(
-                    '清除成功',
-                    'AstrBot 数据已清除，应用即将退出',
-                    snackPosition: SnackPosition.BOTTOM,
-                    duration: const Duration(seconds: 2),
-                  );
-
-                  // 等待提示显示后退出应用
-                  await Future.delayed(const Duration(seconds: 2));
-                  exit(0);
-                } else {
-                  Get.snackbar(
-                    '提示',
-                    '数据目录不存在，无需清除',
-                    snackPosition: SnackPosition.BOTTOM,
-                    duration: const Duration(seconds: 2),
-                  );
-                }
-              } catch (e) {
-                Log.e('清除 AstrBot 数据失败: $e', tag: 'AstrBot');
-                Get.snackbar(
-                  '操作失败',
-                  '清除数据失败: $e',
-                  snackPosition: SnackPosition.BOTTOM,
-                  duration: const Duration(seconds: 3),
-                );
-              }
-            }
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.refresh),
-          title: const Text('重置 Python 环境'),
-          subtitle: const Text('删除 AstrBot 虚拟环境并重启应用，启动时将自动重建'),
-          onTap: () async {
-            // 显示确认对话框
-            final confirmed = await Get.dialog<bool>(
-              AlertDialog(
-                title: const Text('确认重置'),
-                content: const Text(
-                  '此操作将删除 Python 虚拟环境（.venv 目录）并退出应用。\n'
-                  '下次启动时会自动重建环境并安装所有插件依赖。\n\n'
-                  '是否继续？',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => _closeDialog(result: false),
-                    child: const Text('取消'),
-                  ),
-                  TextButton(
-                    onPressed: () => _closeDialog(result: true),
-                    child: const Text(
-                      '确定',
-                      style: TextStyle(color: Colors.orange),
-                    ),
-                  ),
-                ],
-              ),
-            );
-            if (confirmed == true) {
-              try {
-                final venvPath = '${scripts.ubuntuPath}/root/AstrBot/.venv';
-                final venvDir = Directory(venvPath);
-
-                if (await venvDir.exists()) {
-                  await venvDir.delete(recursive: true);
-                  Log.i('已删除 Python 虚拟环境: $venvPath', tag: 'AstrBot');
-
-                  Get.snackbar(
-                    '重置成功',
-                    'Python 环境已删除，应用即将退出',
-                    snackPosition: SnackPosition.BOTTOM,
-                    duration: const Duration(seconds: 2),
-                  );
-
-                  // 等待提示显示后退出应用
-                  await Future.delayed(const Duration(seconds: 2));
-                  exit(0);
-                } else {
-                  Get.snackbar(
-                    '提示',
-                    '虚拟环境目录不存在',
-                    snackPosition: SnackPosition.BOTTOM,
-                    duration: const Duration(seconds: 2),
-                  );
-                }
-              } catch (e) {
-                Log.e('删除 Python 虚拟环境失败: $e', tag: 'AstrBot');
-                Get.snackbar(
-                  '操作失败',
-                  '删除虚拟环境失败: $e',
-                  snackPosition: SnackPosition.BOTTOM,
-                  duration: const Duration(seconds: 3),
-                );
-              }
-            }
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.login),
-          title: const Text('快速登录 QQ'),
-          subtitle: const Text('配置自动登录的QQ账号'),
-          onTap: () => _showQuickLoginDialog(),
-        ),
-        const Divider(height: 1),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            children: [
-              const Text(
-                '自定义 WebUI',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
-                onPressed: _showAddWebUIDialog,
-                tooltip: '添加自定义 WebUI',
-              ),
-            ],
-          ),
-        ),
-        Obx(() {
-          final customWebViews = homeController.customWebViews;
-          if (customWebViews.isEmpty) {
-            return const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(
-                child: Text(
-                  '访问插件的 WebUI 面板\n点击右上角"+"添加',
-                  style: TextStyle(color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
-          return Column(
-            children: List.generate(customWebViews.length, (index) {
-              final webview = customWebViews[index];
-              return ListTile(
-                leading: const Icon(Icons.language),
-                title: Text(webview['title'] ?? 'WebUI'),
-                subtitle: Text(webview['url'] ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, size: 20),
-                      onPressed: () => _showEditWebUIDialog(index, webview),
-                      tooltip: '编辑',
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 20,
-                        color: Colors.red,
-                      ),
-                      onPressed: () => _confirmDeleteWebUI(
-                        index,
-                        webview['title'] ?? 'WebUI',
-                      ),
-                      tooltip: '删除',
-                    ),
-                  ],
-                ),
-              );
-            }),
-          );
-        }),
-        const Divider(),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Text(
-            '高级设置',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
+    // 外层 Scaffold 背景透明，此处需自行铺主题背景色，否则深色模式下会透出浅色窗口
+    return Scaffold(
+      backgroundColor: colors.surface,
+      body: ListView(
+        key: const PageStorageKey<String>('settings_page_scroll'),
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              '设置',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.battery_saver),
-          title: const Text('电池优化豁免'),
-          subtitle: Text(_isBatteryOptimizationIgnored ? '已授权' : '未授权（点击授权）'),
-          trailing: _isBatteryOptimizationIgnored
-              ? const Icon(Icons.check_circle, color: Colors.green)
-              : const Icon(Icons.warning, color: Colors.orange),
-          onTap: () => _requestBatteryOptimization(),
-        ),
-        ListTile(
-          leading: const Icon(Icons.web),
-          title: const Text('NapCat WebUI'),
-          subtitle: const Text('显示或隐藏 NapCat 网页控制面板（默认隐藏）'),
-          trailing: Switch(
-            value: homeController.napCatWebUiEnabled.get() ?? false,
-            onChanged: (bool value) {
-              // 使用新的方法来同步更新响应式变量
-              homeController.setNapCatWebUiEnabled(value);
-
-              Get.closeAllSnackbars();
+          // 外观设置分组
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              '外观',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: AppTheme.modeNotifier,
+            builder: (context, mode, _) {
+              return ListTile(
+                leading: Icon(
+                  mode == ThemeMode.dark
+                      ? Icons.dark_mode_outlined
+                      : mode == ThemeMode.light
+                          ? Icons.light_mode_outlined
+                          : Icons.brightness_auto_outlined,
+                ),
+                title: const Text('主题模式'),
+                subtitle: Text('当前：${AppTheme.modeLabel(mode)}'),
+                trailing: SegmentedButton<ThemeMode>(
+                  segments: const [
+                    ButtonSegment<ThemeMode>(
+                      value: ThemeMode.system,
+                      icon: Icon(Icons.brightness_auto_outlined),
+                      tooltip: '跟随系统',
+                    ),
+                    ButtonSegment<ThemeMode>(
+                      value: ThemeMode.light,
+                      icon: Icon(Icons.light_mode_outlined),
+                      tooltip: '浅色',
+                    ),
+                    ButtonSegment<ThemeMode>(
+                      value: ThemeMode.dark,
+                      icon: Icon(Icons.dark_mode_outlined),
+                      tooltip: '深色',
+                    ),
+                  ],
+                  selected: <ThemeMode>{mode},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (Set<ThemeMode> selection) {
+                    AppTheme.setMode(selection.first);
+                  },
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('软件版本'),
+            subtitle: Text(
+              _appVersion.isEmpty ? '加载中...' : '$_appVersion（点击检查更新）',
+            ),
+            onTap: () => _checkForUpdates(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('回到 AstrBot 主页'),
+            subtitle: const Text('切换到 AstrBot 页面'),
+            onTap: () {
+              homeController.navigateToTab.value = 0;
               Get.snackbar(
-                value ? 'WebUI 已启用' : 'WebUI 已禁用',
-                value ? 'NapCat 标签页已显示，可以立即访问控制面板' : 'NapCat 标签页已隐藏',
+                '已跳转',
+                '正在切换到 AstrBot 页面',
                 snackPosition: SnackPosition.BOTTOM,
                 duration: const Duration(seconds: 2),
               );
             },
           ),
-        ),
-        Obx(() {
-          final token = homeController.napCatWebUiToken.value;
-          return ListTile(
-            leading: const Icon(Icons.vpn_key),
-            title: const Text('NapCat 登录 token'),
-            subtitle: Text(token.isEmpty ? '暂未获取到token' : token),
-            onTap: token.isEmpty
-                ? null
-                : () async {
-                    final fullUrl = 'http://localhost:6099/webui?token=$token';
-                    await Clipboard.setData(ClipboardData(text: fullUrl));
-                    Get.snackbar(
-                      '已复制',
-                      '完整登录链接已复制到剪贴板',
-                      snackPosition: SnackPosition.BOTTOM,
-                      duration: const Duration(seconds: 2),
-                    );
-                  },
-          );
-        }),
-        ListTile(
-          leading: const Icon(Icons.code),
-          title: const Text('自定义 Git Clone 命令'),
-          subtitle: const Text('自定义 AstrBot 的获取方式'),
-          onTap: () => _showCustomGitCloneDialog(),
-        ),
-        ListTile(
-          leading: const Icon(Icons.terminal),
-          title: const Text('自定义启动命令'),
-          subtitle: const Text('自动打开新终端并执行任意启动命令'),
-          onTap: () => _showCustomStartupCommandDialog(),
-        ),
-        ListTile(
-          leading: const Icon(Icons.text_fields),
-          title: const Text('显示终端白色文本日志'),
-          subtitle: const Text('是否在终端显示 AstrBot 白色文本日志（默认打开）'),
-          trailing: Obx(() => Switch(
-                value: homeController.showTerminalWhiteTextRx.value,
-                onChanged: (bool value) {
-                  // 使用新的方法来同步更新响应式变量
-                  homeController.setShowTerminalWhiteText(value);
+          ListTile(
+            leading: const Icon(Icons.restart_alt),
+            title: const Text('更新或重装 AstrBot'),
+            subtitle: const Text('清除 AstrBot 组件并重新安装最新版本'),
+            onTap: () async {
+              // 首先询问是否需要备份
+              final backupChoice = await Get.dialog<String>(
+                AlertDialog(
+                  title: const Text('重新安装 AstrBot'),
+                  content: const Text('重新安装将删除所有 AstrBot 数据，\n是否需要先备份当前数据？'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => _closeDialog(result: 'cancel'),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => _closeDialog(result: 'no_backup'),
+                      child: const Text(
+                        '直接重装',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _closeDialog(result: 'backup'),
+                      child: Text(
+                        '备份后重装',
+                        style: TextStyle(color: colors.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              );
 
-                  Get.closeAllSnackbars();
-                  Get.snackbar(
-                    value ? '已启用白色文本显示' : '已禁用白色文本显示',
-                    value ? '终端将显示所有日志输出' : '终端将仅显示彩色日志输出',
-                    snackPosition: SnackPosition.BOTTOM,
-                    duration: const Duration(seconds: 2),
-                  );
-                },
-              )),
-        ),
-        ListTile(
-          leading: const Icon(Icons.folder),
-          title: const Text('文件系统'),
-          subtitle: const Text(
-            '内置 Ubuntu 文件系统已挂载至 \'文件\'\n可添加至 MT 文件管理器侧栏以快捷访问',
-          ),
-          onTap: () => _openFileManager(),
-        ),
-        ListTile(
-          leading: const Icon(Icons.delete_outline),
-          title: const Text('清空 WebView 缓存'),
-          subtitle: const Text('清理所有 WebView 缓存'),
-          onTap: () async {
-            try {
-              await _nativeWebViewChannel.invokeMethod('clearCache');
-              if (context.mounted) {
-                Get.snackbar(
-                  '成功',
-                  'WebView 缓存已清理',
-                  snackPosition: SnackPosition.BOTTOM,
-                );
+              if (backupChoice == 'cancel' || backupChoice == null) {
+                return;
               }
-            } catch (e) {
-              if (context.mounted) {
-                Get.snackbar(
-                  '清理失败',
-                  e.toString(),
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-              }
-            }
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('隐私政策'),
-          subtitle: const Text('查看应用隐私政策'),
-          onTap: () async {
-            try {
-              final privacyContent =
-                  await rootBundle.loadString('assets/privacy_policy.md');
-              if (context.mounted) {
-                Get.dialog(
-                  Dialog(
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              const Text(
-                                '隐私政策',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () => _closeDialog(),
-                              ),
-                            ],
-                          ),
+
+              // 如果选择备份，先执行备份
+              if (backupChoice == 'backup') {
+                bool backupSuccess =
+                    await _performBackup(showLoadingDialog: true);
+
+                if (!backupSuccess) {
+                  // 备份失败，询问是否继续
+                  final continueAnyway = await Get.dialog<bool>(
+                    AlertDialog(
+                      title: const Text('备份失败'),
+                      content: const Text('数据备份失败，是否仍要继续重新安装？'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => _closeDialog(result: false),
+                          child: const Text('取消'),
                         ),
-                        const Divider(height: 1),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(16.0),
-                            child: MarkdownBody(
-                              data: privacyContent,
-                              styleSheet: MarkdownStyleSheet(
-                                h1: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                h2: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                h3: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                p: const TextStyle(fontSize: 14),
-                                listBullet: const TextStyle(fontSize: 14),
-                              ),
-                            ),
+                        TextButton(
+                          onPressed: () => _closeDialog(result: true),
+                          child: const Text(
+                            '继续重装',
+                            style: TextStyle(color: Colors.red),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              }
-            } catch (e) {
-              if (context.mounted) {
-                Get.snackbar(
-                  '加载失败',
-                  '无法加载隐私政策: $e',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-              }
-            }
-          },
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.exit_to_app, color: Colors.red),
-          title: const Text(
-            '退出应用',
-            style: TextStyle(color: Colors.red),
-          ),
-          subtitle: const Text('退出 AstrBot 应用'),
-          onTap: () async {
-            // 显示确认对话框
-            final confirm = await Get.dialog<bool>(
-              AlertDialog(
-                title: const Text('确认退出'),
-                content: const Text('确定要退出应用吗？'),
-                actions: [
-                  TextButton(
-                    onPressed: () => _closeDialog(result: false),
-                    child: const Text('取消'),
-                  ),
-                  TextButton(
-                    onPressed: () => _closeDialog(result: true),
-                    child: const Text(
-                      '退出',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
-              ),
-            );
+                  );
 
-            if (confirm == true) {
-              Get.snackbar(
-                '退出应用',
-                '应用即将退出',
-                snackPosition: SnackPosition.BOTTOM,
-                duration: const Duration(seconds: 2),
+                  if (continueAnyway != true) {
+                    return;
+                  }
+                }
+              }
+
+              // 最终确认重新安装
+              final finalConfirm = await Get.dialog<bool>(
+                AlertDialog(
+                  title: const Text('确认重新安装'),
+                  content: const Text('确定要删除所有 AstrBot 数据并重新安装吗？\n此操作不可恢复！'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => _closeDialog(result: false),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => _closeDialog(result: true),
+                      child: const Text(
+                        '确定重装',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
               );
 
-              // 2秒后自动退出应用
-              Future.delayed(const Duration(seconds: 2), () {
-                exit(0);
-              });
+              if (finalConfirm == true) {
+                try {
+                  // 删除 AstrBot 目录（~/AstrBot）
+                  final astrBotPath = '${scripts.ubuntuPath}/root/AstrBot';
+                  final astrBotDir = Directory(astrBotPath);
+                  if (await astrBotDir.exists()) {
+                    await astrBotDir.delete(recursive: true);
+                    Log.i('已删除 AstrBot 目录: $astrBotPath', tag: 'AstrBot');
+                  }
+
+                  if (context.mounted) {
+                    Get.snackbar(
+                      '重装成功',
+                      '应用将自动退出，请重新启动',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+
+                    // 2秒后自动退出应用
+                    Future.delayed(const Duration(seconds: 2), () {
+                      exit(0);
+                    });
+                  }
+                } catch (e) {
+                  Log.e('重新安装 AstrBot 失败: $e', tag: 'AstrBot');
+                  if (context.mounted) {
+                    Get.snackbar(
+                      '重新安装失败',
+                      e.toString(),
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.refresh),
+            title: const Text('更新或重装 NapcatQQ'),
+            subtitle: const Text('清除 NapcatQQ 组件并重新安装最新版本'),
+            onTap: () async {
+              // 显示确认对话框
+              final confirm = await Get.dialog<bool>(
+                AlertDialog(
+                  title: const Text('确认重新安装'),
+                  content: const Text('此操作将删除 NapcatQQ 安装文件（保留配置文件）并重新安装，确定继续吗？'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => _closeDialog(result: false),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => _closeDialog(result: true),
+                      child: const Text(
+                        '确定',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                try {
+                  // 删除 launcher.sh 文件，这是安装判断的依据
+                  final launcherPath = '${scripts.ubuntuPath}/root/Napcat/launcher.sh';
+                  final launcherFile = File(launcherPath);
+                  if (await launcherFile.exists()) {
+                    await launcherFile.delete();
+                    Log.i('已删除 launcher.sh: $launcherPath', tag: 'AstrBot');
+                  }
+
+                  if (context.mounted) {
+                    Get.snackbar(
+                      '重装成功',
+                      '应用将自动退出，请重新启动',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+
+                    // 2秒后自动退出应用
+                    Future.delayed(const Duration(seconds: 2), () {
+                      exit(0);
+                    });
+                  }
+                } catch (e) {
+                  Log.e('重新安装 NapcatQQ 失败: $e', tag: 'AstrBot');
+                  if (context.mounted) {
+                    Get.snackbar(
+                      '重新安装失败',
+                      e.toString(),
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.build),
+            title: const Text('覆盖安装插件依赖'),
+            subtitle: const Text('下次启动时重新扫描并安装所有插件依赖'),
+            onTap: () async {
+              try {
+                final scriptPath =
+                    '${scripts.ubuntuPath}/root/astrbot-startup.sh';
+                final scriptFile = File(scriptPath);
+
+                if (await scriptFile.exists()) {
+                  String content = await scriptFile.readAsString();
+
+                  // 将 REINSTALL_PLUGINS_FLAG=0 修改为 REINSTALL_PLUGINS_FLAG=1
+                  content = content.replaceFirst(
+                    RegExp(r'^REINSTALL_PLUGINS_FLAG=0$', multiLine: true),
+                    'REINSTALL_PLUGINS_FLAG=1',
+                  );
+
+                  await scriptFile.writeAsString(content);
+                  Log.i('已设置插件依赖重装标记', tag: 'AstrBot');
+
+                  Get.snackbar(
+                    '设置成功',
+                    '下次启动时将重新安装所有插件依赖',
+                    snackPosition: SnackPosition.BOTTOM,
+                    duration: const Duration(seconds: 2),
+                  );
+                } else {
+                  Get.snackbar(
+                    '提示',
+                    '启动脚本文件不存在，请先启动一次应用',
+                    snackPosition: SnackPosition.BOTTOM,
+                    duration: const Duration(seconds: 2),
+                  );
+                }
+              } catch (e) {
+                Log.e('设置重装标记失败: $e', tag: 'AstrBot');
+                Get.snackbar(
+                  '操作失败',
+                  '设置重装标记失败: $e',
+                  snackPosition: SnackPosition.BOTTOM,
+                  duration: const Duration(seconds: 3),
+                );
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.backup),
+            title: const Text('备份 AstrBot 数据'),
+            subtitle: const Text('备份 AstrBot 配置和数据到手机存储'),
+            onTap: () async {
+              await _performBackup(showLoadingDialog: true);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete),
+            title: const Text('清除 AstrBot 数据'),
+            subtitle: const Text('清除 AstrBot 配置和数据，\n重启时自动从备份恢复或重新初始化'),
+            onTap: () async {
+              // 显示确认对话框
+              final confirmed = await Get.dialog<bool>(
+                AlertDialog(
+                  title: const Text('确认清除数据'),
+                  content: const Text(
+                    '此操作将删除所有 AstrBot 数据和配置，\n'
+                    '重启后将自动从备份恢复或重新初始化。\n\n'
+                    '是否继续？',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => _closeDialog(result: false),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => _closeDialog(result: true),
+                      child: const Text(
+                        '确定',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                try {
+                  final dataPath = '${scripts.ubuntuPath}/root/AstrBot/data';
+                  final dataDir = Directory(dataPath);
+
+                  if (await dataDir.exists()) {
+                    await dataDir.delete(recursive: true);
+                    Log.i('已清除 AstrBot 数据目录: $dataPath', tag: 'AstrBot');
+
+                    Get.snackbar(
+                      '清除成功',
+                      'AstrBot 数据已清除，应用即将退出',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+
+                    // 等待提示显示后退出应用
+                    await Future.delayed(const Duration(seconds: 2));
+                    exit(0);
+                  } else {
+                    Get.snackbar(
+                      '提示',
+                      '数据目录不存在，无需清除',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+                  }
+                } catch (e) {
+                  Log.e('清除 AstrBot 数据失败: $e', tag: 'AstrBot');
+                  Get.snackbar(
+                    '操作失败',
+                    '清除数据失败: $e',
+                    snackPosition: SnackPosition.BOTTOM,
+                    duration: const Duration(seconds: 3),
+                  );
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.refresh),
+            title: const Text('重置 Python 环境'),
+            subtitle: const Text('删除 AstrBot 虚拟环境并重启应用，启动时将自动重建'),
+            onTap: () async {
+              // 显示确认对话框
+              final confirmed = await Get.dialog<bool>(
+                AlertDialog(
+                  title: const Text('确认重置'),
+                  content: const Text(
+                    '此操作将删除 Python 虚拟环境（.venv 目录）并退出应用。\n'
+                    '下次启动时会自动重建环境并安装所有插件依赖。\n\n'
+                    '是否继续？',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => _closeDialog(result: false),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => _closeDialog(result: true),
+                      child: const Text(
+                        '确定',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true) {
+                try {
+                  final venvPath = '${scripts.ubuntuPath}/root/AstrBot/.venv';
+                  final venvDir = Directory(venvPath);
+
+                  if (await venvDir.exists()) {
+                    await venvDir.delete(recursive: true);
+                    Log.i('已删除 Python 虚拟环境: $venvPath', tag: 'AstrBot');
+
+                    Get.snackbar(
+                      '重置成功',
+                      'Python 环境已删除，应用即将退出',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+
+                    // 等待提示显示后退出应用
+                    await Future.delayed(const Duration(seconds: 2));
+                    exit(0);
+                  } else {
+                    Get.snackbar(
+                      '提示',
+                      '虚拟环境目录不存在',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+                  }
+                } catch (e) {
+                  Log.e('删除 Python 虚拟环境失败: $e', tag: 'AstrBot');
+                  Get.snackbar(
+                    '操作失败',
+                    '删除虚拟环境失败: $e',
+                    snackPosition: SnackPosition.BOTTOM,
+                    duration: const Duration(seconds: 3),
+                  );
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.login),
+            title: const Text('快速登录 QQ'),
+            subtitle: const Text('配置自动登录的QQ账号'),
+            onTap: () => _showQuickLoginDialog(),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Text(
+                  '自定义 WebUI',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.add_circle_outline, color: colors.primary),
+                  onPressed: _showAddWebUIDialog,
+                  tooltip: '添加自定义 WebUI',
+                ),
+              ],
+            ),
+          ),
+          Obx(() {
+            final customWebViews = homeController.customWebViews;
+            if (customWebViews.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    '访问插件的 WebUI 面板\n点击右上角"+"添加',
+                    style: TextStyle(color: colors.onSurfaceVariant),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
             }
-          },
-        ),
-      ],
+            return Column(
+              children: List.generate(customWebViews.length, (index) {
+                final webview = customWebViews[index];
+                return ListTile(
+                  leading: const Icon(Icons.language),
+                  title: Text(webview['title'] ?? 'WebUI'),
+                  subtitle: Text(webview['url'] ?? ''),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 20),
+                        onPressed: () => _showEditWebUIDialog(index, webview),
+                        tooltip: '编辑',
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          size: 20,
+                          color: Colors.red,
+                        ),
+                        onPressed: () => _confirmDeleteWebUI(
+                          index,
+                          webview['title'] ?? 'WebUI',
+                        ),
+                        tooltip: '删除',
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            );
+          }),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              '高级设置',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.battery_saver),
+            title: const Text('电池优化豁免'),
+            subtitle: Text(_isBatteryOptimizationIgnored ? '已授权' : '未授权（点击授权）'),
+            trailing: _isBatteryOptimizationIgnored
+                ? const Icon(Icons.check_circle, color: Colors.green)
+                : const Icon(Icons.warning, color: Colors.orange),
+            onTap: () => _requestBatteryOptimization(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.web),
+            title: const Text('NapCat WebUI'),
+            subtitle: const Text('显示或隐藏 NapCat 网页控制面板（默认隐藏）'),
+            trailing: Switch(
+              value: homeController.napCatWebUiEnabled.get() ?? false,
+              onChanged: (bool value) {
+                // 使用新的方法来同步更新响应式变量
+                homeController.setNapCatWebUiEnabled(value);
+
+                Get.closeAllSnackbars();
+                Get.snackbar(
+                  value ? 'WebUI 已启用' : 'WebUI 已禁用',
+                  value ? 'NapCat 标签页已显示，可以立即访问控制面板' : 'NapCat 标签页已隐藏',
+                  snackPosition: SnackPosition.BOTTOM,
+                  duration: const Duration(seconds: 2),
+                );
+              },
+            ),
+          ),
+          Obx(() {
+            final token = homeController.napCatWebUiToken.value;
+            return ListTile(
+              leading: const Icon(Icons.vpn_key),
+              title: const Text('NapCat 登录 token'),
+              subtitle: Text(token.isEmpty ? '暂未获取到token' : token),
+              onTap: token.isEmpty
+                  ? null
+                  : () async {
+                      final fullUrl = 'http://localhost:6099/webui?token=$token';
+                      await Clipboard.setData(ClipboardData(text: fullUrl));
+                      Get.snackbar(
+                        '已复制',
+                        '完整登录链接已复制到剪贴板',
+                        snackPosition: SnackPosition.BOTTOM,
+                        duration: const Duration(seconds: 2),
+                      );
+                    },
+            );
+          }),
+          ListTile(
+            leading: const Icon(Icons.code),
+            title: const Text('自定义 Git Clone 命令'),
+            subtitle: const Text('自定义 AstrBot 的获取方式'),
+            onTap: () => _showCustomGitCloneDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.terminal),
+            title: const Text('自定义启动命令'),
+            subtitle: const Text('自动打开新终端并执行任意启动命令'),
+            onTap: () => _showCustomStartupCommandDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.text_fields),
+            title: const Text('显示终端白色文本日志'),
+            subtitle: const Text('是否在终端显示 AstrBot 白色文本日志（默认打开）'),
+            trailing: Obx(() => Switch(
+                  value: homeController.showTerminalWhiteTextRx.value,
+                  onChanged: (bool value) {
+                    // 使用新的方法来同步更新响应式变量
+                    homeController.setShowTerminalWhiteText(value);
+
+                    Get.closeAllSnackbars();
+                    Get.snackbar(
+                      value ? '已启用白色文本显示' : '已禁用白色文本显示',
+                      value ? '终端将显示所有日志输出' : '终端将仅显示彩色日志输出',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+                  },
+                )),
+          ),
+          ListTile(
+            leading: const Icon(Icons.folder),
+            title: const Text('文件系统'),
+            subtitle: const Text(
+              '内置 Ubuntu 文件系统已挂载至 \'文件\'\n可添加至 MT 文件管理器侧栏以快捷访问',
+            ),
+            onTap: () => _openFileManager(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: const Text('清空 WebView 缓存'),
+            subtitle: const Text('清理所有 WebView 缓存'),
+            onTap: () async {
+              try {
+                await _nativeWebViewChannel.invokeMethod('clearCache');
+                if (context.mounted) {
+                  Get.snackbar(
+                    '成功',
+                    'WebView 缓存已清理',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Get.snackbar(
+                    '清理失败',
+                    e.toString(),
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('隐私政策'),
+            subtitle: const Text('查看应用隐私政策'),
+            onTap: () async {
+              try {
+                final privacyContent =
+                    await rootBundle.loadString('assets/privacy_policy.md');
+                if (context.mounted) {
+                  Get.dialog(
+                    Dialog(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  '隐私政策',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const Spacer(),
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => _closeDialog(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(16.0),
+                              child: MarkdownBody(
+                                data: privacyContent,
+                                styleSheet: MarkdownStyleSheet(
+                                  h1: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  h2: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  h3: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  p: const TextStyle(fontSize: 14),
+                                  listBullet: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Get.snackbar(
+                    '加载失败',
+                    '无法加载隐私政策: $e',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
+              }
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: Colors.red),
+            title: const Text(
+              '退出应用',
+              style: TextStyle(color: Colors.red),
+            ),
+            subtitle: const Text('退出 AstrBot 应用'),
+            onTap: () async {
+              // 显示确认对话框
+              final confirm = await Get.dialog<bool>(
+                AlertDialog(
+                  title: const Text('确认退出'),
+                  content: const Text('确定要退出应用吗？'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => _closeDialog(result: false),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => _closeDialog(result: true),
+                      child: const Text(
+                        '退出',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                Get.snackbar(
+                  '退出应用',
+                  '应用即将退出',
+                  snackPosition: SnackPosition.BOTTOM,
+                  duration: const Duration(seconds: 2),
+                );
+
+                // 2秒后自动退出应用
+                Future.delayed(const Duration(seconds: 2), () {
+                  exit(0);
+                });
+              }
+            },
+            ),
+        ],
+      ),
     );
   }
 }

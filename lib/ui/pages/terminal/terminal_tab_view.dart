@@ -442,7 +442,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                       child: Material(
                         color: tab.type == TerminalTabType.system
                             ? Theme.of(context).colorScheme.surface
-                            : Colors.white,
+                            : Theme.of(context).colorScheme.surfaceContainerHigh,
                         elevation: 2,
                         shape: const CircleBorder(),
                         clipBehavior: Clip.antiAlias,

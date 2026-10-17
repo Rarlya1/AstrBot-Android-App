@@ -50,15 +50,18 @@ class WebViewBottomNavBar extends StatelessWidget {
         ),
       ];
 
+      final ThemeData theme = Theme.of(context);
+      final ColorScheme colors = theme.colorScheme;
+
       return BottomNavigationBar(
         currentIndex: currentIndex >= navItems.length
             ? navItems.length - 1
             : currentIndex,
         onTap: onTap,
         type: BottomNavigationBarType.shifting,
-        backgroundColor: Colors.white,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
+        backgroundColor: colors.surfaceContainer,
+        selectedItemColor: colors.primary,
+        unselectedItemColor: colors.onSurfaceVariant,
         items: navItems,
       );
     });

@@ -29,7 +29,6 @@ class _WebViewPageState extends State<WebViewPage> {
   @override
   void initState() {
     super.initState();
-    _initSystemUI();
     // 首次打开自动启动 AstrBot（未就绪则显示加载等待）
     if (homeController.isLocalhostDetected.value) {
       _openInNativeWebView('http://127.0.0.1:6185', 'AstrBot');
@@ -49,6 +48,13 @@ class _WebViewPageState extends State<WebViewPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 依赖 Theme，需在 initState 之后调用；主题切换后同样会重新应用
+    _initSystemUI();
+  }
+
+  @override
   void dispose() {
     _readySub?.cancel();
     _napcatReadySub?.cancel();
@@ -57,11 +63,7 @@ class _WebViewPageState extends State<WebViewPage> {
   }
 
   void _initSystemUI() {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-    ));
+    _applySystemUIOverlay();
   }
 
   void _restoreSystemUI() {
@@ -69,6 +71,16 @@ class _WebViewPageState extends State<WebViewPage> {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.dark,
+    ));
+  }
+
+  /// 状态栏配色跟随当前主题，避免深色模式下出现白条与深色图标
+  void _applySystemUIOverlay() {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
     ));
   }
 
@@ -151,11 +163,14 @@ class _WebViewPageState extends State<WebViewPage> {
         });
       }
 
+      final ThemeData theme = Theme.of(context);
+      final bool isDark = theme.brightness == Brightness.dark;
+
       return AnnotatedRegion<SystemUiOverlayStyle>(
-        value: const SystemUiOverlayStyle(
-          statusBarColor: Colors.white,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
         child: Scaffold(
           // Web 标签页时透明让 SurfaceView 下的 WebView 透出来
@@ -201,11 +216,11 @@ class _WebViewPageState extends State<WebViewPage> {
                   ],
                 ),
               ),
-              // Web 标签页的状态栏区域画白，避免透明背景露黑
+              // 状态栏区域铺主题背景色，避免透明背景露出底层黑色
               Positioned(
                 top: 0, left: 0, right: 0,
                 height: MediaQuery.of(context).padding.top,
-                child: const ColoredBox(color: Colors.white),
+                child: ColoredBox(color: theme.colorScheme.surface),
               ),
             ],
           ),
