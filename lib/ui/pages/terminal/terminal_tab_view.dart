@@ -440,10 +440,7 @@ class _TerminalTabViewState extends State<TerminalTabView> {
                     child: Tooltip(
                       message: '滚动到最新输出',
                       child: Material(
-                        color: tab.type == TerminalTabType.system
-                            ? Theme.of(context).colorScheme.surface
-                            : Colors.white,
-                        elevation: 2,
+                        color: Theme.of(context).colorScheme.surface,
                         shape: const CircleBorder(),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
