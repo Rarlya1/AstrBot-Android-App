@@ -31,6 +31,7 @@ export L_INSTALLED=${S.current.installed}
 export PROOT_LOADER=${RuntimeEnvir.binPath}/loader
 export LD_LIBRARY_PATH=${RuntimeEnvir.binPath}
 export PROOT_TMP_DIR=${RuntimeEnvir.tmpPath}
+
 clear_lines(){
   printf "\\033[1A" # Move cursor up one line
   printf "\\033[K"  # Clear the line
