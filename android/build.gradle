@@ -2,9 +2,9 @@ allprojects {
     repositories {
         // google()
         // jcenter()
-        maven { url 'https://storage.flutter-io.cn/repository/google' }
-        maven { url 'https://storage.flutter-io.cn/repository/jcenter' }
-        maven { url 'https://storage.flutter-io.cn/repository/public' }
+        maven { url 'https://storage.googleapis.com/repository/google' }
+        maven { url 'https://storage.googleapis.com/repository/jcenter' }
+        maven { url 'https://storage.googleapis.com/repository/public' }
     }
 }
 
@@ -17,6 +17,16 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(':app')
+}
+
+subprojects { subproject ->
+    ['com.android.application', 'com.android.library'].each { pluginId ->
+        subproject.plugins.withId(pluginId) {
+            subproject.extensions.getByName('android').defaultConfig.ndk {
+                abiFilters 'arm64-v8a'
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

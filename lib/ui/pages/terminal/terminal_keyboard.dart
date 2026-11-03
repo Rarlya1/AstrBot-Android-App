@@ -12,6 +12,9 @@ class TerminalKeyboard extends StatefulWidget {
 }
 
 class _TerminalKeyboardState extends State<TerminalKeyboard> {
+  /// 统一主题入口
+  ColorScheme get colors => Theme.of(context).colorScheme;
+
   String _mod = ''; // 当前激活的修饰键：ctrl / alt / shift / 空
 
   /// 向终端发送按键事件
@@ -63,13 +66,11 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Container(
       decoration: BoxDecoration(
-        color: cs.surface,
+        color: colors.surface,
         border: Border(
-          top: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+          top: BorderSide(color: colors.outlineVariant.withOpacity(0.5)),
         ),
       ),
       child: Column(
@@ -92,7 +93,7 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
             child: Row(
               children: [
                 // Ctrl / Alt / Shift 键组
-                _modGroup(cs),
+                _modGroup(),
                 const SizedBox(width: 8),
                 // 滑动命令键
                 Expanded(
@@ -128,27 +129,27 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
   // ─── 修饰键组 ───
 
   /// Ctrl / Alt / Shift 三个键包在一个圆角矩形框内
-  Widget _modGroup(ColorScheme cs) {
+  Widget _modGroup() {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: cs.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: cs.outlineVariant),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _modItem('Ctrl', 'ctrl', true, false, cs),
-          Container(width: 1, height: 16, color: cs.outlineVariant),
-          _modItem('Alt', 'alt', false, false, cs),
-          Container(width: 1, height: 16, color: cs.outlineVariant),
-          _modItem('Shift', 'shift', false, true, cs),
+          _modItem('Ctrl', 'ctrl', true, false),
+          Container(width: 1, height: 16, color: colors.outlineVariant),
+          _modItem('Alt', 'alt', false, false),
+          Container(width: 1, height: 16, color: colors.outlineVariant),
+          _modItem('Shift', 'shift', false, true),
         ],
       ),
     );
   }
 
-  Widget _modItem(String label, String id, bool first, bool last, ColorScheme cs) {
+  Widget _modItem(String label, String id, bool first, bool last) {
     final a = _mod == id;
     return GestureDetector(
       onTap: () => _tapMod(id),
@@ -158,7 +159,7 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
-          color: a ? cs.primaryContainer : Colors.transparent,
+          color: a ? colors.primaryContainer : Colors.transparent,
           borderRadius: first
               ? const BorderRadius.horizontal(left: Radius.circular(6))
               : last
@@ -170,7 +171,7 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: a ? FontWeight.bold : FontWeight.w500,
-            color: a ? cs.onPrimaryContainer : cs.primary,
+            color: a ? colors.onPrimaryContainer : colors.primary,
           ),
         ),
       ),
@@ -181,7 +182,6 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
 
   /// 单次触发的按键
   Widget _pill(String label, VoidCallback onTap) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(right: 4),
       child: Material(
@@ -195,13 +195,13 @@ class _TerminalKeyboardState extends State<TerminalKeyboard> {
             alignment: Alignment.center,
             padding: EdgeInsets.symmetric(horizontal: label.length <= 1 ? 0 : 8),
             decoration: BoxDecoration(
-              color: cs.surface,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: cs.outlineVariant),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Text(
               label,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.primary),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: colors.primary),
             ),
           ),
         ),
@@ -226,6 +226,9 @@ class _RepeatBtnWidget extends StatefulWidget {
 }
 
 class _RepeatBtnWidgetState extends State<_RepeatBtnWidget> {
+  /// 统一主题入口
+  ColorScheme get colors => Theme.of(context).colorScheme;
+
   Timer? _timer;
   bool _holding = false;
 
@@ -255,7 +258,6 @@ class _RepeatBtnWidgetState extends State<_RepeatBtnWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(right: 4),
       child: GestureDetector(
@@ -270,13 +272,13 @@ class _RepeatBtnWidgetState extends State<_RepeatBtnWidget> {
             alignment: Alignment.center,
             padding: EdgeInsets.symmetric(horizontal: widget.label.length <= 1 ? 0 : 8),
             decoration: BoxDecoration(
-              color: cs.surface,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: cs.outlineVariant),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Text(
               widget.label,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.primary),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: colors.primary),
             ),
           ),
         ),

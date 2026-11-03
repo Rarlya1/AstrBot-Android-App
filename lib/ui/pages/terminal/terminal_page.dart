@@ -22,6 +22,9 @@ class _TerminalPageState extends State<TerminalPage> {
   bool visible = false || kDebugMode;
   final TerminalController terminalController = TerminalController();
 
+  /// 统一主题入口
+  ColorScheme get colors => Theme.of(context).colorScheme;
+
   @override
   void dispose() {
     // 页面只拥有自己的 TerminalController，不负责关闭 HomeController 的 PTY。
@@ -32,7 +35,7 @@ class _TerminalPageState extends State<TerminalPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: visible ? terminalTheme.background : Theme.of(context).colorScheme.surface,
+      backgroundColor: visible ? terminalTheme.background : colors.surface,
       body: SafeArea(
         child: GestureDetector(
           onTap: () {
@@ -63,7 +66,7 @@ class _TerminalPageState extends State<TerminalPage> {
               Center(
                 child: Material(
                   borderRadius: BorderRadius.circular(12.w),
-                  color: Theme.of(context).colorScheme.surface,
+                  color: colors.surface,
                   child: SizedBox(
                     width: 300.w,
                     child: Padding(
@@ -91,7 +94,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                     Container(
                                       height: 5.w,
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary.opacity02,
+                                        color: colors.primary.opacity02,
                                         borderRadius: BorderRadius.circular(3.w),
                                       ),
                                     ),
@@ -100,7 +103,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                       height: 5.w,
                                       width: 300.w * controller.progress.value,
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: colors.primary,
                                         borderRadius: BorderRadius.circular(3.w),
                                       ),
                                     ),
@@ -112,7 +115,7 @@ class _TerminalPageState extends State<TerminalPage> {
                                   style: TextStyle(
                                     fontSize: 12.w,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: colors.onSurface,
                                   ),
                                 ),
                               ],

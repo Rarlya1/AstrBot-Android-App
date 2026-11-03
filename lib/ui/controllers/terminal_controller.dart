@@ -391,6 +391,7 @@ class HomeController extends GetxController {
   // Init environment and link files from the dynamic library to the data directory
   Future<void> initEnvir() async {
     List<String> androidFiles = [
+      'libandroid-shmem.so',
       'libbash.so',
       'libbusybox.so',
       'liblibtalloc.so.2.so',
@@ -406,7 +407,12 @@ class HomeController extends GetxController {
       // cannot execute file in /data/data/com.xxx/files/usr/bin
       // so we need create a link to /data/data/com.xxx/files/usr/bin
       final sourcePath = '$libPath/${androidFiles[i]}';
-      String fileName = androidFiles[i].replaceAll(RegExp('^lib|\\.so\$'), '');
+      // libandroid-shmem.so 的 NEEDED 名带 lib 前缀，必须保留原名；
+      // 其余按约定去掉 lib 前缀与 .so 后缀（得到 libtalloc.so.2 / loader / proot 等）
+      // libandroid-shmem.so keeps its original name since that is its NEEDED name
+      String fileName = androidFiles[i] == 'libandroid-shmem.so'
+          ? androidFiles[i]
+          : androidFiles[i].replaceAll(RegExp('^lib|\\.so\$'), '');
       String filePath = '${RuntimeEnvir.binPath}/$fileName';
       // custom path, termux-api will invoke
       File file = File(filePath);

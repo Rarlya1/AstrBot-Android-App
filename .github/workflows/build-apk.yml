@@ -76,7 +76,7 @@ jobs:
           printf '%s' "$SECRETS_X509_PEM_BASE64" | base64 --decode > /tmp/secrets.x509.pem
 
       - name: Build APK
-        run: flutter build apk --release --no-pub
+        run: flutter build apk --release --no-pub --target-platform android-arm64 --no-tree-shake-icons --verbose
 
       - name: Sign APK with pk8 and x509 certificate
         run: |

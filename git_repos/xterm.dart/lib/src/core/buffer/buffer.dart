@@ -51,6 +51,8 @@ class Buffer {
 
   final charset = Charset();
 
+  var _nextLogicalTrimCheck = 0;
+
   /// Width of the viewport in columns. Also the index of the last column.
   int get viewWidth => terminal.viewWidth;
 
@@ -133,12 +135,7 @@ class Buffer {
       _cursorX++;
     }
 
-    if (cellWidth == 2) {
-      writeChar(0);
-      return;
-    }
-
-    _trimLogicalLines();
+    if (cellWidth == 2) writeChar(0);
   }
 
   /// The line at the current cursor position.
@@ -229,9 +226,14 @@ class Buffer {
   void _trimLogicalLines() {
     if (isAltBuffer || lines.length <= viewHeight) return;
 
+    final scrollbackLength = lines.length - viewHeight;
+    if (scrollbackLength <= maxLines * 2 ||
+        lines.length < _nextLogicalTrimCheck) {
+      return;
+    }
+
     var logicalLines = 0;
     var trimCount = 0;
-    final scrollbackLength = lines.length - viewHeight;
     for (var i = 0; i < scrollbackLength; i++) {
       if (i == 0 || !lines[i].isWrapped) {
         logicalLines++;
@@ -245,6 +247,9 @@ class Buffer {
     if (trimCount > 0) {
       lines.trimStart(trimCount);
     }
+
+    _nextLogicalTrimCheck = lines.length + maxLines ~/ 8;
+
   }
 
   void scrollUp(int lines) {

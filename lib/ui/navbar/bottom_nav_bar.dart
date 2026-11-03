@@ -14,6 +14,7 @@ class WebViewBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
     final HomeController homeController = Get.find<HomeController>();
 
     // 使用 Obx 来响应式监听变化
@@ -49,9 +50,6 @@ class WebViewBottomNavBar extends StatelessWidget {
           label: '设置',
         ),
       ];
-
-      final ThemeData theme = Theme.of(context);
-      final ColorScheme colors = theme.colorScheme;
 
       return BottomNavigationBar(
         currentIndex: currentIndex >= navItems.length

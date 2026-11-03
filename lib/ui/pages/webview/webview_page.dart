@@ -19,6 +19,10 @@ class WebViewPage extends StatefulWidget {
 }
 
 class _WebViewPageState extends State<WebViewPage> {
+  /// 统一主题入口
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
+  ColorScheme get colors => Theme.of(context).colorScheme;
+
   int _currentIndex = 0;
   int _previousNavItemCount = 0;
 
@@ -63,7 +67,12 @@ class _WebViewPageState extends State<WebViewPage> {
   }
 
   void _initSystemUI() {
-    _applySystemUIOverlay();
+  /// 状态栏配色跟随当前主题，避免深色模式下出现白条与深色图标
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+    ));
   }
 
   void _restoreSystemUI() {
@@ -71,16 +80,6 @@ class _WebViewPageState extends State<WebViewPage> {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.dark,
-    ));
-  }
-
-  /// 状态栏配色跟随当前主题，避免深色模式下出现白条与深色图标
-  void _applySystemUIOverlay() {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
     ));
   }
 
@@ -163,9 +162,6 @@ class _WebViewPageState extends State<WebViewPage> {
         });
       }
 
-      final ThemeData theme = Theme.of(context);
-      final bool isDark = theme.brightness == Brightness.dark;
-
       return AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -188,7 +184,7 @@ class _WebViewPageState extends State<WebViewPage> {
                       final loading = isAstrBotPage && !homeController.isLocalhostDetected.value;
                       if (loading) {
                         return Obx(() => Container(
-                          color: Theme.of(context).colorScheme.surface,
+                          color: colors.surface,
                           child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -220,7 +216,7 @@ class _WebViewPageState extends State<WebViewPage> {
               Positioned(
                 top: 0, left: 0, right: 0,
                 height: MediaQuery.of(context).padding.top,
-                child: ColoredBox(color: theme.colorScheme.surface),
+                child: ColoredBox(color: colors.surface),
               ),
             ],
           ),

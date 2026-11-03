@@ -9,7 +9,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:flutter/services.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../../core/constants/scripts.dart' as scripts;
 import '../../../core/config/app_config.dart';
@@ -29,6 +28,9 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  /// 统一主题入口
+  ColorScheme get colors => Theme.of(context).colorScheme;
+
   String _appVersion = '';
   bool _isBatteryOptimizationIgnored = false;
   final HomeController homeController = Get.find<HomeController>();
@@ -340,7 +342,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // 显示下载源选择对话框
   void _showDownloadSourceDialog(Map<String, dynamic> releaseData) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     // 如果还没有保存原始URL，从releaseData中构造
     if (_originalDownloadUrl == null) {
       final assets = releaseData['assets'] as List?;
@@ -410,7 +411,7 @@ class _SettingsPageState extends State<SettingsPage> {
               '请选择适合您网络环境的下载源',
               style: TextStyle(
                 fontSize: 14,
-                color: cs.onSurfaceVariant,
+                color: colors.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -921,7 +922,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // 显示自定义 Git Clone 对话框
   void _showCustomGitCloneDialog() async {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final scriptPath = '${scripts.ubuntuPath}/root/astrbot-startup.sh';
     final scriptFile = File(scriptPath);
 
@@ -972,7 +972,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 '自定义克隆命令，以使用 fork 的 AstrBot 仓库；目标目录固定为 AstrBot，不可自定义。\n留空则使用默认逻辑（从镜像源获取官方最新 tag）。',
                 style: TextStyle(
                   fontSize: 12,
-                  color: cs.onSurfaceVariant,
+                  color: colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
@@ -980,7 +980,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 '示例：\ngit clone https://github.com/AstrBotDevs/AstrBot.git',
                 style: TextStyle(
                   fontSize: 11,
-                  color: cs.onSurfaceVariant,
+                  color: colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1049,7 +1049,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _showCustomStartupCommandDialog() async {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final currentCommand =
         homeController.customStartupCommand.get() as String? ?? '';
     final commandController = TextEditingController(text: currentCommand);
@@ -1065,7 +1064,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 '自动打开新终端并执行任意启动命令',
                 style: TextStyle(
                   fontSize: 12,
-                  color: cs.onSurfaceVariant,
+                  color: colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1073,7 +1072,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 '示例：\ncd /root/AstrBot\npython main.py &',
                 style: TextStyle(
                   fontSize: 11,
-                  color: cs.onSurfaceVariant,
+                  color: colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1119,7 +1118,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // 打开文件管理器并导航到 AstrBot Ubuntu 文件系统位置
   Future<void> _openFileManager() async {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     try {
       // 使用 DocumentsProvider 的 content URI 打开文件管理器
       // authority: com.astrbot.app.documents
@@ -1159,7 +1157,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: cs.primary,
+                    color: colors.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1167,7 +1165,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   '你可以手动打开系统"文件"应用，在侧栏中找到"AstrBot Ubuntu"来访问。',
                   style: TextStyle(
                     fontSize: 12,
-                    color: cs.onSurfaceVariant,
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1175,7 +1173,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   '或使用 MT 文件管理器等应用，添加以下路径至侧栏:',
                   style: TextStyle(
                     fontSize: 12,
-                    color: cs.onSurfaceVariant,
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1184,7 +1182,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(
                     fontSize: 11,
                     fontFamily: 'monospace',
-                    color: cs.primary,
+                    color: colors.primary,
                   ),
                 ),
               ],
@@ -1227,9 +1225,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colors = theme.colorScheme;
-
     // 外层 Scaffold 背景透明，此处需自行铺主题背景色，否则深色模式下会透出浅色窗口
     return Scaffold(
       backgroundColor: colors.surface,
