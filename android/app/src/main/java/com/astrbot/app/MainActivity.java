@@ -206,7 +206,7 @@ public class MainActivity extends FragmentActivity {
             builder.setPriority(Notification.PRIORITY_HIGH);
         }
         builder.setSmallIcon(com.astrbot.app.R.drawable.ic_notification)
-                .setContentTitle(title == null ? "AstrBot 报错" : title)
+                .setContentTitle(title == null ? "AstrBot" : title)
                 .setContentText(body)
                 .setStyle(new Notification.BigTextStyle().bigText(body))
                 .setAutoCancel(true)

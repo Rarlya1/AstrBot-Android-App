@@ -70,6 +70,8 @@ class HomeController extends GetxController {
   int _suppressedErrorCount = 0; // 节流期间被压下的报错条数
   static const Duration _errorNotifyInterval = Duration(minutes: 1);
   static final RegExp _ansiPattern = RegExp(r'\x1b\[[0-9;]*m|\033\[[0-9;]*m');
+  // 被着色过的 [ERRO]：真实日志由 loguru 染色，用户消息等纯文本没有颜色码
+  static final RegExp _colorizedErrorPattern = RegExp(r'\x1b\[[0-9;]*m\[ERRO\]');
 
   File progressFile = File('${RuntimeEnvir.tmpPath}/progress');
   File progressDesFile = File('${RuntimeEnvir.tmpPath}/progress_des');
@@ -237,17 +239,15 @@ class HomeController extends GetxController {
   void _watchErrorLog(String event) {
     if (errorNotificationEnabled.get() != true) return;
 
-    // 控制台一行日志按空格分段：[时间] [标签] [级别] [v版本] [来源:行号]: 正文
-    // 第 3 段是级别，第 5 段是来源，正文是第 5 段之后的内容
-    for (final line in _stripAnsi(event).split('\n')) {
-      final segments = line.trim().split(' ');
-      if (segments.length < 6) continue;
-      if (segments[2] != '[ERRO]') continue;
+    // 绝大多数输出不含报错，先整体筛一次，避免无谓的逐行处理
+    if (!event.contains(_colorizedErrorPattern)) return;
 
-      _notifyErrorLog(
-        segments.sublist(5).join(' '),
-        source: segments[4].replaceAll('[', '').split(':').first,
-      );
+    for (final line in event.split('\n')) {
+      if (!line.contains(_colorizedErrorPattern)) continue;
+      final segments = _stripAnsi(line).trim().split(' ');
+      if (segments.length < 6 || segments[2] != '[ERRO]') continue;
+
+      _notifyErrorLog(segments.sublist(5).join(' '));
     }
   }
 
@@ -255,7 +255,7 @@ class HomeController extends GetxController {
     return text.replaceAll(_ansiPattern, '');
   }
 
-  void _notifyErrorLog(String message, {String? source}) {
+  void _notifyErrorLog(String message) {
     final now = DateTime.now();
     final last = _lastErrorNotifyTime;
     if (last != null && now.difference(last) < _errorNotifyInterval) {
@@ -267,17 +267,14 @@ class HomeController extends GetxController {
     final suppressed = _suppressedErrorCount;
     _suppressedErrorCount = 0;
 
-    final body = StringBuffer();
-    if (source != null) {
-      body.write('[$source] ');
-    }
+    final body = StringBuffer('运行出错 ');
     body.write(message);
     if (suppressed > 0) {
       body.write('（期间另有 $suppressed 条报错）');
     }
 
     Log.w('检测到报错: ${body.toString()}', tag: 'AstrBot');
-    unawaited(_showErrorNotification('AstrBot 报错', body.toString()));
+    unawaited(_showErrorNotification('AstrBot', body.toString()));
   }
 
   // 通知由原生侧创建，见 MainActivity 的 astrbot_notification 通道
