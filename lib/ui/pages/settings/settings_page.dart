@@ -1867,6 +1867,25 @@ class _SettingsPageState extends State<SettingsPage> {
                 )),
           ),
           ListTile(
+            leading: const Icon(Icons.notifications_active_outlined),
+            title: const Text('报错通知'),
+            subtitle: const Text('AstrBot 输出 [ERRO] 日志时发送通知提醒（默认关闭）'),
+            trailing: Obx(() => Switch(
+                  value: homeController.errorNotificationEnabledRx.value,
+                  onChanged: (bool value) {
+                    homeController.setErrorNotificationEnabled(value);
+
+                    Get.closeAllSnackbars();
+                    Get.snackbar(
+                      value ? '已启用报错通知' : '已禁用报错通知',
+                      value ? 'AstrBot 报错时将发送通知提醒' : '不再发送报错通知',
+                      snackPosition: SnackPosition.BOTTOM,
+                      duration: const Duration(seconds: 2),
+                    );
+                  },
+                )),
+          ),
+          ListTile(
             leading: const Icon(Icons.folder),
             title: const Text('文件系统'),
             subtitle: const Text(

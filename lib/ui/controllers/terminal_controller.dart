@@ -20,6 +20,8 @@ import 'terminal_tab_manager.dart';
 
 class HomeController extends GetxController {
   static const _nativeWebViewChannel = MethodChannel('astrbot_native_webview');
+  // 报错通知通道，原生侧实现见 MainActivity
+  static const _notificationChannel = MethodChannel('astrbot_notification');
   static const double defaultTerminalFontSize = 12.0;
   static const double minTerminalFontSize = 8.0;
   static const double maxTerminalFontSize = 16.0;
@@ -30,12 +32,16 @@ class HomeController extends GetxController {
   SettingNode napCatWebUiEnabled = 'napcat_webui_enabled'.setting;
   SettingNode showTerminalWhiteText = 'show_terminal_white_text'.setting;
   SettingNode customStartupCommand = 'custom_startup_command'.setting;
+  // 沿用旧键名，避免已有用户的开关状态被重置
+  SettingNode errorNotificationEnabled =
+      'api_error_notification_enabled'.setting;
   Pty? astrbotPty;
   Pty? napcatPty;
 
   final RxString napCatWebUiToken = ''.obs; // 存储 NapCat WebUI Token
   final RxBool napCatWebUiEnabledRx = false.obs; // GetX 响应式变量用于导航栏更新
   final RxBool showTerminalWhiteTextRx = false.obs; // GetX 响应式变量用于设置页更新
+  final RxBool errorNotificationEnabledRx = false.obs; // 报错通知开关
   // 仅保存在当前运行期间，应用重启后恢复 xterm 默认字号
   final RxDouble terminalFontSize = defaultTerminalFontSize.obs;
   final RxList<Map<String, String>> customWebViews =
@@ -60,6 +66,10 @@ class HomeController extends GetxController {
   bool _isNapCatQuickLogin = false; // NapCat 快速登录标记
   bool _isCustomCommand = false; // 自定义命令标记
   String _pendingOutput = ''; // 待处理的输出缓冲
+  DateTime? _lastErrorNotifyTime; // 上次报错通知时间，用于节流
+  int _suppressedErrorCount = 0; // 节流期间被压下的报错条数
+  static const Duration _errorNotifyInterval = Duration(minutes: 1);
+  static final RegExp _ansiPattern = RegExp(r'\x1b\[[0-9;]*m|\033\[[0-9;]*m');
 
   File progressFile = File('${RuntimeEnvir.tmpPath}/progress');
   File progressDesFile = File('${RuntimeEnvir.tmpPath}/progress_des');
@@ -222,6 +232,67 @@ class HomeController extends GetxController {
     return resetRegex.hasMatch(text);
   }
 
+  // 监听 AstrBot 输出中的 [ERRO] 日志，按设置开关发送通知
+  // Watch AstrBot output for [ERRO] logs and notify when the setting is enabled
+  void _watchErrorLog(String event) {
+    if (errorNotificationEnabled.get() != true) return;
+
+    // 控制台一行日志按空格分段：[时间] [标签] [级别] [v版本] [来源:行号]: 正文
+    // 第 3 段是级别，第 5 段是来源，正文是第 5 段之后的内容
+    for (final line in _stripAnsi(event).split('\n')) {
+      final segments = line.trim().split(' ');
+      if (segments.length < 6) continue;
+      if (segments[2] != '[ERRO]') continue;
+
+      _notifyErrorLog(
+        segments.sublist(5).join(' '),
+        source: segments[4].replaceAll('[', '').split(':').first,
+      );
+    }
+  }
+
+  String _stripAnsi(String text) {
+    return text.replaceAll(_ansiPattern, '');
+  }
+
+  void _notifyErrorLog(String message, {String? source}) {
+    final now = DateTime.now();
+    final last = _lastErrorNotifyTime;
+    if (last != null && now.difference(last) < _errorNotifyInterval) {
+      _suppressedErrorCount++;
+      return;
+    }
+    _lastErrorNotifyTime = now;
+
+    final suppressed = _suppressedErrorCount;
+    _suppressedErrorCount = 0;
+
+    final body = StringBuffer();
+    if (source != null) {
+      body.write('[$source] ');
+    }
+    body.write(message);
+    if (suppressed > 0) {
+      body.write('（期间另有 $suppressed 条报错）');
+    }
+
+    Log.w('检测到报错: ${body.toString()}', tag: 'AstrBot');
+    unawaited(_showErrorNotification('AstrBot 报错', body.toString()));
+  }
+
+  // 通知由原生侧创建，见 MainActivity 的 astrbot_notification 通道
+  Future<void> _showErrorNotification(String title, String body) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _notificationChannel.invokeMethod('showError', {
+        'title': title,
+        'body': body,
+      });
+    } catch (e) {
+      Log.e('发送报错通知失败: $e', tag: 'AstrBot');
+    }
+  }
+
   // 处理彩色输出过滤逻辑
   // Handle colored output filtering logic
   void _processColoredOutput(String event) {
@@ -301,6 +372,10 @@ class HomeController extends GetxController {
           }
         }
       }
+
+      // 检查报错日志并发送通知
+      // Check error logs and send a notification
+      _watchErrorLog(event);
 
       // 检查是否包含 localhost:6185
       if (event.contains('http://localhost:6185')) {
@@ -615,6 +690,10 @@ class HomeController extends GetxController {
     // 初始化显示终端白色文本状态（默认打开）
     showTerminalWhiteTextRx.value = showTerminalWhiteText.get() ?? true;
 
+    // 初始化报错通知开关（默认关闭）
+    errorNotificationEnabledRx.value =
+        errorNotificationEnabled.get() ?? false;
+
     // 从持久化存储加载自定义 WebView 列表
     _loadCustomWebViews();
 
@@ -719,6 +798,12 @@ class HomeController extends GetxController {
   void setShowTerminalWhiteText(bool value) {
     showTerminalWhiteText.set(value);
     showTerminalWhiteTextRx.value = value;
+  }
+
+  // 更新报错通知开关状态（用于同步响应式变量）
+  void setErrorNotificationEnabled(bool value) {
+    errorNotificationEnabled.set(value);
+    errorNotificationEnabledRx.value = value;
   }
 
   /// 写入终端

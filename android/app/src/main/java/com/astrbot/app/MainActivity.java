@@ -2,6 +2,10 @@ package com.astrbot.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -81,6 +85,19 @@ public class MainActivity extends FragmentActivity {
                 }
             });
 
+        /* 报错通知通道 */
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), "astrbot_notification")
+            .setMethodCallHandler((call, result) -> {
+                if ("showError".equals(call.method)) {
+                    String title = call.argument("title");
+                    String body = call.argument("body");
+                    showErrorNotification(title, body);
+                    result.success(true);
+                } else {
+                    result.notImplemented();
+                }
+            });
+
         /* 原生 WebView 通道 */
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), "astrbot_native_webview")
             .setMethodCallHandler((call, result) -> {
@@ -153,6 +170,50 @@ public class MainActivity extends FragmentActivity {
                 .commit();
     }
 
+
+    /* =====================================================
+     * 报错通知
+     * ===================================================== */
+
+    private static final String ERROR_CHANNEL_ID = "astrbot_error_channel";
+    private static final int ERROR_NOTIFICATION_ID = 2001;
+
+    private void showErrorNotification(String title, String body) {
+        NotificationManager manager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager == null) return;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    ERROR_CHANNEL_ID, "AstrBot 报错提醒", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("AstrBot 输出 [ERRO] 日志时提醒");
+            manager.createNotificationChannel(channel);
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, pendingFlags);
+
+        Notification.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder = new Notification.Builder(this, ERROR_CHANNEL_ID);
+        } else {
+            builder = new Notification.Builder(this);
+            builder.setPriority(Notification.PRIORITY_HIGH);
+        }
+        builder.setSmallIcon(com.astrbot.app.R.drawable.ic_notification)
+                .setContentTitle(title == null ? "AstrBot 报错" : title)
+                .setContentText(body)
+                .setStyle(new Notification.BigTextStyle().bigText(body))
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        manager.notify(ERROR_NOTIFICATION_ID, builder.build());
+    }
 
     /* =====================================================
      * 覆盖层 WebView 管理
